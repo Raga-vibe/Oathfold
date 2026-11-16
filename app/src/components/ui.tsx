@@ -48,15 +48,15 @@ export function RecordCard({ record }: { record: OathRecord }) {
       </h3>
       <pre className="record-card__payload" title={c.payload}>
         <code>
-          <span className="tok-def">{'{'}</span>{'\n'}
-          {'  '}<span className="tok-prop">promise</span><span className="tok-def">:</span> <span className="tok-str">"{title}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">status</span><span className="tok-def">:</span> <span className="tok-str">"{record.status}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">opens</span><span className="tok-def">:</span> <span className="tok-str">"{shortDate(record.open)}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">judge</span><span className="tok-def">:</span> <span className="tok-str">"{shortAddress('0x' + c.to.slice(-40))}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">ruling</span><span className="tok-def">:</span> <span className="tok-str">"{designated ? designated.outcome : 'not yet'}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">sealed</span><span className="tok-def">:</span> <span className="tok-str">"{c.payload.slice(0, 42)}..."</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">opened</span><span className="tok-def">:</span> <span className="tok-type">{record.reveal ? 'true' : 'false'}</span>{'\n'}
-          <span className="tok-def">{'}'}</span>
+          <span className="code-punct">{'{'}</span>{'\n'}
+          {'  '}<span className="code-prop">promise</span><span className="code-punct">:</span> <span className="code-str">"{title}"</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">status</span><span className="code-punct">:</span> <span className="code-str">"{record.status}"</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">opens</span><span className="code-punct">:</span> <span className="code-str">"{shortDate(record.open)}"</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">judge</span><span className="code-punct">:</span> <span className="code-str">"{shortAddress('0x' + c.to.slice(-40))}"</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">ruling</span><span className="code-punct">:</span> <span className="code-ruling">"{designated ? designated.outcome : 'not yet'}"</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">sealed</span><span className="code-punct">:</span> <span className="code-str">"{c.payload.slice(0, 42)}..."</span><span className="code-punct">,</span>{'\n'}
+          {'  '}<span className="code-prop">opened</span><span className="code-punct">:</span> <span className="code-bool">{record.reveal ? 'true' : 'false'}</span>{'\n'}
+          <span className="code-punct">{'}'}</span>
         </code>
       </pre>
       <p className="record-card__meta">{STATUS_PLAIN[record.status]}</p>

@@ -129,3 +129,24 @@ Two linked jobs, one round. Full inventory in `docs/state-machines.md`.
    features explanation (draft in `docs/submission-draft.md`).
 4. Before submission, re-run `npm test` and `npm run build`, and re-check the hub seal
    state on the Live chain page.
+
+## 2026-11-16: reskin to the founder's Auros style spec
+
+- Trigger.dev dark system replaced by Auros (DESIGN_2.md, tokens.json,
+  theme.css, variables.css, all copied to `docs/design-reference-auros/`).
+- Dark teal abyss: canvas #012624, deep #011D1C, kelp cards #003734,
+  platinum/mist/silver text, lavender phosphor only for the ruling value
+  and emphasis figures, aurora gradient exclusively on the primary CTA.
+- Matter (Inter/system-ui substitute, 400/500 only), hero 61px at -0.04em,
+  uppercase 12px tracked labels, 16px card radii, 6px button radii, no
+  shadows, no syntax palette, no lime, no slate, no pills.
+- Record card is a kelp card with a deep code pane in silver/mist/white;
+  "How it works" steps are kelp cards with 32x32 arrow buttons; dashboard
+  is a kelp table card; header is a transparent 80px bar with an
+  aurora-gradient seal mark and ghost uppercase nav.
+- Mono (ui-monospace 14px) is a deliberate addition: Auros has no mono
+  face. Recorded in decisions.md section 25 with the other adaptations
+  (gradient padding, footer, no-colour errors, dot field).
+- Tests 100/100 pass, production build passes. Screenshots:
+  `shots/auros-landing-1440.png`, `shots/auros-landing-390.png`,
+  `shots/auros-dashboard-1440.png`, `shots/auros-create-1440.png`.

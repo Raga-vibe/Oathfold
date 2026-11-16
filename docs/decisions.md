@@ -251,3 +251,41 @@ default. Deliberately kept in the main UI: the words "sealed", "judge",
 the sealed content subject "Commitment: ..." inside a sealed promise (stored
 data format, not UI copy). Protocol code, machines and routes are unchanged;
 this round is copy and navigation only.
+
+## 25. Auros dark teal system replaces the Trigger.dev system
+
+16 November 2026, founder decision: the founder uploaded a second style
+reference (DESIGN_2.md, Auros, plus tokens.json, theme.css and
+variables.css, all copied verbatim into
+`docs/design-reference-auros/`). It replaces the Trigger.dev dark system
+from section 21, at the founder's word. Token mapping: slate canvas
+#1C1E21 became Liquid Abyss #012624; ink-well #121317 became Liquid Deep
+#011D1C; kelp cards #003734 replace canvas cards; bone/cloud/fog/ash text
+became platinum #FFFFFF (headings/nav), liquid mist #EDFFFE (emphasised
+body) and silver mist #BBC7C6 (body/secondary); Signal Lime #A8FF53 became
+the aurora gradient, used exclusively on the primary CTA (dark #222222 text,
+uppercase 14px, 6px radius); Satoshi/Geist became Matter (Inter/system-ui
+substitute, weights 400/500 only, hero 61px, -0.04em tracking); mono stays
+locked at 14px. Radii went from 4px to 16px on cards and 6px on buttons;
+status labels are 6px small tracked labels, not 9999px pills. No drop
+shadows in either system. No syntax palette: code lines are silver/mist/
+white only, and the ruling value alone is lavender phosphor #FDE9FF.
+
+Deliberate additions and adaptations, recorded here so they are not
+mistaken for spec drift:
+- Mono (ui-monospace, 14px) is kept for hashes, ids, addresses and code
+  lines. Auros has no mono face; the alternative was unreadable wrapped
+  hex in a proportional face.
+- The spec's Agent Prompt Guide example 1 contradicts its own component
+  spec (it shows a #003734 fill with 9999px radius for the primary
+  button). The component spec wins: aurora gradient, 6px radius.
+- Gradient button padding is 14px/20px, not the spec's 32px vertical:
+  32px would break the compact dashboard and the sticky action bar.
+- The footer is a Liquid Deep recessed card with 36px padding, not the
+  spec's 120px vertical well: the footer is one line.
+- Errors have no colour: Auros has no red. Errors are mist text at weight
+  500, distinguished by wording, never by a colour outside the palette.
+- The hero carries a subtle CSS-only dot field (6% opacity dots) as a nod
+  to the Auros particle sphere; no images, no 3D library.
+- Plain-words copy, the three-item nav, routes, protocol code, machines
+  and tests are unchanged; this round is a reskin only.

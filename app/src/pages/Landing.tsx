@@ -30,18 +30,22 @@ export default function Landing({ state }: { state: AppState }) {
       <section className="steps-strip" aria-label="How it works">
         <h2>How it works</h2>
         <div className="steps-strip__step">
+          <a className="arrow-btn" href="#/create" aria-label="Make a promise">↗</a>
           <strong>Write it</strong>
           <p>Write a promise about something you will do.</p>
         </div>
         <div className="steps-strip__step">
+          <a className="arrow-btn" href="#/create" aria-label="Make a promise">↗</a>
           <strong>Seal it</strong>
           <p>The promise is locked. Nobody can see inside yet.</p>
         </div>
         <div className="steps-strip__step">
+          <a className="arrow-btn" href="#/dashboard" aria-label="See promises">↗</a>
           <strong>Open it</strong>
           <p>On the date you chose, the promise is opened.</p>
         </div>
         <div className="steps-strip__step">
+          <a className="arrow-btn" href="#/review" aria-label="Judge promises">↗</a>
           <strong>The judge rules</strong>
           <p>The judge says hit, miss, or cannot decide.</p>
         </div>

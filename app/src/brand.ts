@@ -33,77 +33,83 @@ export const BANNED_HYPE_WORDS = [
   'fraud-proof',
 ] as const
 
-// Colour tokens. Trigger.dev dark system (DESIGN.md, docs/design-reference.md):
-// slate canvas, ink-well inset, steel/graphite hairlines, bone/cloud/fog/ash
-// text, Signal Lime the only filled accent. Syntax palette lives inside code
-// contexts only. Status colours are used with a text label and a shape, never
-// by colour alone.
+// Colour tokens. Auros dark teal system (DESIGN_2.md,
+// docs/design-reference-auros/): Liquid Abyss canvas, Liquid Deep recessed,
+// Liquid Kelp raised, platinum/silver/mist text, lavender phosphor only for
+// emphasis figures, aurora gradient exclusively on the primary CTA. No gray,
+// black or blue surfaces, no syntax palette. Status colours are used with a
+// text label and a shape, never by colour alone.
 export const COLORS = {
-  canvas: '#1C1E21',
-  inkWell: '#121317',
-  hairline: '#3B3E45',
-  steel: '#272A2E',
-  ash: '#B5B8C0',
-  fog: '#878C99',
-  cloud: '#D7D9DD',
-  bone: '#E5E7EB',
-  lime: '#A8FF53',
-  syntaxViolet: '#9C9AF2',
-  syntaxPink: '#FA3ABF',
-  eventViolet: '#7655FD',
-  loopGreen: '#AFEC73',
-  keyLime: '#D9F07C',
-  tagMagenta: '#E888F8',
-  muteRed: '#F43F5E',
-  // Legacy keys, mapped onto the dark system.
-  ink: '#E5E7EB',
-  inkSoft: '#D7D9DD',
-  body: '#D7D9DD',
-  muted: '#878C99',
-  faint: '#B5B8C0',
-  line: '#272A2E',
-  lineSoft: '#272A2E',
-  bg: '#1C1E21',
-  surface: '#1C1E21',
-  accent: '#A8FF53',
-  accentStrong: '#A8FF53',
-  accentBg: '#121317',
-  accentOn: '#121317',
-  okBg: '#121317',
-  okInk: '#AFEC73',
-  warnBg: '#121317',
-  warnInk: '#D7D9DD',
-  warnLine: '#3B3E45',
-  badBg: '#121317',
-  badInk: '#F43F5E',
+  abyss: '#012624',
+  deep: '#011D1C',
+  kelp: '#003734',
+  mist: '#EDFFFE',
+  platinum: '#FFFFFF',
+  silver: '#BBC7C6',
+  ash: '#F2F2F2',
+  slateDeep: '#707777',
+  lavender: '#FDE9FF',
+  auroraStart: '#CBFFFC',
+  aurora: 'linear-gradient(90deg, rgb(203, 255, 252) 0%, rgb(237, 255, 254) 26.25%, rgb(255, 253, 250) 47.57%, rgb(250, 209, 255) 88.96%)',
+  auroraText: '#222222',
+  // Legacy keys, mapped onto the Auros system.
+  canvas: '#012624',
+  inkWell: '#011D1C',
+  hairline: 'rgba(255, 255, 255, 0.1)',
+  steel: 'rgba(255, 255, 255, 0.1)',
+  fog: '#BBC7C6',
+  cloud: '#EDFFFE',
+  bone: '#FFFFFF',
+  ink: '#FFFFFF',
+  inkSoft: '#EDFFFE',
+  body: '#BBC7C6',
+  muted: '#BBC7C6',
+  faint: '#707777',
+  line: 'rgba(255, 255, 255, 0.1)',
+  lineSoft: 'rgba(255, 255, 255, 0.08)',
+  bg: '#012624',
+  surface: '#003734',
+  accent: '#CBFFFC',
+  accentStrong: '#CBFFFC',
+  accentBg: '#003734',
+  accentOn: '#222222',
+  okBg: '#011D1C',
+  okInk: '#EDFFFE',
+  warnBg: '#011D1C',
+  warnInk: '#EDFFFE',
+  warnLine: 'rgba(255, 255, 255, 0.1)',
+  badBg: '#011D1C',
+  badInk: '#EDFFFE',
 } as const
 
-// Type tokens. Satoshi display and Geist body, both substituted with the
-// system stack (Inter/system-ui) so the build stays offline-safe. Geist Mono
-// locked at 14px for code, hashes, ids, addresses and timestamps.
+// Type tokens. Matter display and body, substituted with the system stack
+// (Inter/system-ui) so the build stays offline-safe. Weights 400 and 500
+// ONLY, no bold, no light, at display sizes. Mono locked at 14px for code,
+// hashes, ids, addresses and timestamps; it is a deliberate addition, Auros
+// has no mono face (see docs/decisions.md).
 export const TYPE = {
-  fontSatoshi:
-    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  fontMatter:
+    "'Matter', Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
   fontSans:
-    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    "'Matter', Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
   fontMono:
     'ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-  // Legacy key kept for any reader of the old shape.
+  // Legacy keys kept for any reader of the old shape.
   fontSerif:
-    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    "'Matter', Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
   baseSizePx: 16,
-  lineHeightBody: 1.56,
-  lineHeightHeading: 1.2,
-  heroPx: 60,
-  heroTrackingPx: 3,
+  lineHeightBody: 1.4,
+  lineHeightHeading: 1,
+  heroPx: 61,
+  heroTrackingPx: -2.44,
   monoPx: 14,
   scale: {
-    xs: '0.875rem',
+    xs: '0.75rem',
     sm: '0.875rem',
     base: '1rem',
-    lg: '1.125rem',
-    xl: '1.25rem',
-    display: 'clamp(2rem, 1.6rem + 4vw, 3.75rem)',
+    lg: '1.25rem',
+    xl: '1.5rem',
+    display: 'clamp(2.5rem, 2.5rem + 1.5vw, 3.8125rem)',
   },
 } as const
 
