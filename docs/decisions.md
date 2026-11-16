@@ -112,3 +112,34 @@ Reads try `https://rpc.xlayer.tech` then `https://xlayerrpc.okx.com`. The second
 returned no response in one earlier check, so it is a fallback, not a quorum partner.
 TAP-10 wants multi-operator agreement for pinned reads; this MVP shows read failures
 rather than false verification, and a stricter quorum read is a follow-up.
+
+## 19. Redesign: a ledger, not a template
+
+16 November 2026: the founder deployed the app and said it screamed slop. The diagnosis was
+right, so the UI was rebuilt under the taste-skill instead of re-tokened. The identity is a
+sealed record, a notary's ledger: warm paper, warm ink, one wax-seal red accent used
+sparingly, a serif display face, mono for hashes and ids, hairline borders, square corners,
+no shadows, no gradients, no purple, no emoji, no illustration, no decorative shapes. The
+two banners above the hero became one slim status strip under the header; the full hub
+warning lives only on the Live chain page. The hero is one short headline, one plain
+sentence, and one real demo record rendered as a record card, so a visitor sees what
+Oathfold makes within 5 seconds. "How it works" is one compact strip; the proof cards,
+the limits card, the "is not" essay and the long footer were cut to one "Checked live"
+line and one footer line. Landing copy was cut by more than two thirds. The record card is
+one shared component used by the landing and the dashboard. Mobile gets a one-row header
+with a menu button. The gate script's checks are built for static pages and returned
+`GATE: ERROR` on this client-rendered SPA, so visual verification was done with headless
+Chromium screenshots at 1440x900 and 390x844, read by eye, in `shots/`.
+
+## 20. Demo-first: judges never need a container
+
+16 November 2026, founder decision: hackathon judges must never have to acquire a
+container or publish a key. The landing's primary action is exploring a real demo record,
+and the Create form defaults its judge field to `VITE_DEFAULT_JUDGE_ENDPOINT`, a single
+configurable default judge endpoint. It is empty until the team provisions one judge
+container and publishes its key; it is documented in `app/.env.example` and
+`docs/container-onboarding.md` section 5 as the Oathfold demo judge, provisioned once by
+the team, so no visitor or hackathon judge ever needs a container to try it. When set,
+the form shows the one-line note "Judge provided by Oathfold." Wallet connect stays only
+for live sends. A visitor who wants to send a live commitment of their own still needs
+their own opened container, which is a protocol requirement, not an Oathfold one.

@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { OathRecord } from '../lib/records'
 import type { CommitmentStatus } from '../lib/protocol/tap12'
-import { statusExplain } from '../lib/protocol/tap12'
 import { buildGraph } from '../lib/graph/graph'
 import { TrackRecordPanel } from '../components/graph-panels'
-import { StatusBadge, SourceBadge } from '../components/ui'
+import { RecordCard } from '../components/ui'
 
 // Demo author container and demo judge endpoint (see src/lib/demo.ts).
 const DEMO_AUTHOR = '0xa2e4592ebbd0a08cf49dc306358b064587ab3362'
@@ -28,11 +27,10 @@ export default function Dashboard({ records }: { records: OathRecord[] }) {
 
   return (
     <div>
-      <h1>Dashboard</h1>
-      <p>
-        Every commitment, grouped by status. Unrevealed and malformed records are shown with
-        the same prominence as judged ones. Nothing is hidden because of its status or outcome.
-      </p>
+      <div className="page-head">
+        <h1>Dashboard</h1>
+        <p>Every commitment, grouped by status. Unrevealed and malformed records are shown with the same prominence as judged ones.</p>
+      </div>
       {showDemoTrackRecords && (
         <div>
           <h2>Track records (graph)</h2>
@@ -60,29 +58,7 @@ export default function Dashboard({ records }: { records: OathRecord[] }) {
       )}
       <div className="grid">
         {sorted.map((r) => (
-          <article className="card" key={r.commitmentId}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              <StatusBadge status={r.status} />
-              <SourceBadge source={r.source} />
-            </div>
-            <h3>
-              <a href={`#/record/${encodeURIComponent(r.commitmentId)}`}>
-                {r.demoTitle ?? r.revealedContent?.body ?? 'Sealed commitment'}
-              </a>
-            </h3>
-            <p className="small">
-              {r.kind} promise. Opens {new Date(r.open * 1000).toUTCString()}.
-            </p>
-            <p className="small">{statusExplain(r.status, r.open)}</p>
-            {r.revealedContent && (
-              <p>{String(r.revealedContent.body ?? '').slice(0, 160)}</p>
-            )}
-            {r.malformedReason && <p className="small">Malformed: {r.malformedReason}</p>}
-            <p className="small mono">id {r.commitmentId.slice(0, 18)}...</p>
-            <p>
-              <a href={`#/record/${encodeURIComponent(r.commitmentId)}`}>Open record</a>
-            </p>
-          </article>
+          <RecordCard key={r.commitmentId} record={r} />
         ))}
       </div>
     </div>

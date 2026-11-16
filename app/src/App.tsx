@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { BRAND, brandCopy } from './brand'
+import { brandCopy } from './brand'
 import { loadDemoRecords, loadLiveRecords } from './lib/store'
 import { verifyHub, type HubVerification } from './lib/chain/xlayer'
 import type { OathRecord } from './lib/records'
 import type { WalletState } from './lib/wallet'
-import { connectWallet, hasWallet, switchToXLayer } from './lib/wallet'
+import { connectWallet, switchToXLayer } from './lib/wallet'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
 import Create from './pages/Create'
@@ -61,6 +61,7 @@ const NAV: { href: string; label: string; route: Route['name'] }[] = [
 
 export default function App() {
   const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash))
+  const [menuOpen, setMenuOpen] = useState(false)
   const [demoRecords, setDemoRecords] = useState<OathRecord[]>(() => loadDemoRecords())
   const [liveState, setLiveState] = useState(() => loadLiveRecords())
   const [liveMeta, setLiveMeta] = useState<AppState['liveMeta']>(liveState.meta)
@@ -112,56 +113,62 @@ export default function App() {
   }
 
   const allRecords = [...liveState.records, ...demoRecords]
+  const hubState = hub === null ? 'Hub check pending' : hub.isSealed ? 'Hub sealed' : 'Hub not sealed'
 
   return (
     <div>
       <header className="topbar">
-        <a className="brand" href="#/">
-          <span className="brand-mark" aria-hidden="true" />
-          Oath<span>fold</span>
-        </a>
-        <span className="brand-tagline">{BRAND.tagline}</span>
-        <nav className="nav" aria-label="Main">
-          {NAV.map((n) => (
-            <a key={n.href} href={n.href} className={route.name === n.route ? 'active' : ''}>
-              {n.label}
-            </a>
-          ))}
-        </nav>
-        <div className="walletbar">
-          {wallet.connected && wallet.address ? (
-            <span className="small mono">
-              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-              {wallet.chainId === 196 ? ' (X Layer)' : ` (chain ${wallet.chainId}, not X Layer)`}
-            </span>
-          ) : (
-            <span className="small">Wallet not connected</span>
-          )}
-          <button className="btn secondary small" type="button" onClick={connect}>
-            {wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
+        <div className="topbar__inner">
+          <a className="brand" href="#/">
+            <span className="brand-seal" aria-hidden="true" />
+            Oathfold
+          </a>
+          <button
+            className="menu-btn"
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="main-nav"
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {menuOpen ? 'Close' : 'Menu'}
           </button>
+          <nav id="main-nav" className={`nav${menuOpen ? ' open' : ''}`} aria-label="Main">
+            {NAV.map((n) => (
+              <a
+                key={n.href}
+                href={n.href}
+                className={route.name === n.route ? 'active' : ''}
+                onClick={() => setMenuOpen(false)}
+              >
+                {n.label}
+              </a>
+            ))}
+          </nav>
+          <div className="walletbar">
+            {wallet.connected && wallet.address ? (
+              <span className="small mono">
+                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                {wallet.chainId === 196 ? ' (X Layer)' : ` (chain ${wallet.chainId}, not X Layer)`}
+              </span>
+            ) : (
+              <span className="small">Wallet not connected</span>
+            )}
+            <button className="btn secondary small" type="button" onClick={connect}>
+              {wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
+            </button>
+          </div>
         </div>
       </header>
 
-      {hub && hub.isSealed === false && (
-        <div className="wrap" style={{ paddingBottom: 0 }}>
-          <div className="callout" role="alert">
-            <strong>Warning: the X Layer hub is not sealed.</strong> The hub owner can still
-            replace the hub implementation, which could change identity checks. Oathfold shows
-            this on every page until the hub is sealed. Hub owner:{' '}
-            <span className="mono">{hub.owner}</span>. See the Live chain page for the full check.
-          </div>
+      <div className="status-strip">
+        <div className="status-strip__inner">
+          <b>X Layer 196</b> · {hubState} ·{' '}
+          {wallet.connected && wallet.address
+            ? `Wallet ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
+            : 'No wallet'}{' '}
+          · <a href="#/live">Live chain</a>
         </div>
-      )}
-      {!hasWallet() && (
-        <div className="wrap" style={{ paddingBottom: 0 }}>
-          <div className="callout info">
-            No EIP-1193 wallet was detected in this browser. You can still explore the demo
-            records and the live chain data. A wallet is only needed to publish a key or send
-            a live commitment.
-          </div>
-        </div>
-      )}
+      </div>
 
       <main className="wrap">
         {route.name === 'landing' && <Landing state={state} />}
@@ -172,11 +179,8 @@ export default function App() {
         {route.name === 'live' && <Live state={state} />}
         {route.name === 'trust' && <Trust />}
         <footer className="footer">
-          <p>{brandCopy.footerIntro}</p>
           <p>
-            {brandCopy.footerAttribution} Hub:{' '}
-            <span className="mono">0xe61A9C7213a6Aa616C246a2B569e555B417b25ee</span> on
-            X Layer (chain 196).
+            {brandCopy.footerIntro} Hub <span className="mono">0xe61A...25ee</span> on X Layer (196).
           </p>
         </footer>
       </main>

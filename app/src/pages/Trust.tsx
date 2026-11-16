@@ -3,10 +3,9 @@ import { Callout, Kv } from '../components/ui'
 export default function Trust() {
   return (
     <div>
-      <h1>Trust: what is verified, what is not</h1>
+      <h1>Trust</h1>
       <p>
-        Oathfold is built to be checkable, not to ask for trust. This page states the limits
-        plainly.
+        Oathfold is built to be checkable, not to ask for trust. This page states the limits plainly.
       </p>
 
       <h2>Verified by this app</h2>

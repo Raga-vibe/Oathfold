@@ -79,9 +79,8 @@ export default function Review({ records }: { records: OathRecord[] }) {
     <div>
       <h1>Reviewer console</h1>
       <p>
-        Commitments that are due, revealed or unrevealed, awaiting a verdict. A verdict on a
-        commitment that has not been revealed must be undecidable. Hit and miss need at least
-        one source. A verdict sent before the open time is marked early.
+        Due, revealed and unrevealed commitments waiting for a verdict. An unrevealed
+        commitment can only be undecidable. Hit and miss need at least one source.
       </p>
       {queue.length === 0 && (
         <Callout kind="info">

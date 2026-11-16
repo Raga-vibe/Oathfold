@@ -33,47 +33,50 @@ export const BANNED_HYPE_WORDS = [
   'fraud-proof',
 ] as const
 
-// Colour tokens. One accent (deep blue) on restrained neutrals; status colours
-// are used with a text label and a shape, never by colour alone.
+// Colour tokens. Paper, ink, one wax-seal accent used sparingly.
+// Status colours are used with a text label and a shape, never by colour alone.
 export const COLORS = {
-  ink: '#0F172A',
-  inkSoft: '#1E293B',
-  body: '#334155',
-  muted: '#475569',
-  faint: '#64748B',
-  line: '#E2E8F0',
-  lineSoft: '#F1F5F9',
-  bg: '#F8FAFC',
-  surface: '#FFFFFF',
-  accent: '#1E40AF',
-  accentStrong: '#1E3A8A',
-  accentBg: '#EFF6FF',
-  accentOn: '#FFFFFF',
-  okBg: '#EAF7EE',
-  okInk: '#166534',
-  warnBg: '#FFF7E6',
-  warnInk: '#7C4A03',
-  warnLine: '#F0D9A8',
-  badBg: '#FDEEEE',
-  badInk: '#991B1B',
+  ink: '#211A13',
+  inkSoft: '#3D342A',
+  body: '#4A4136',
+  muted: '#6F6355',
+  faint: '#8A7D6C',
+  line: '#D9D0BC',
+  lineSoft: '#E6DFCD',
+  bg: '#F7F3EA',
+  surface: '#FFFDF7',
+  accent: '#8A2B1D',
+  accentStrong: '#7A2418',
+  accentBg: '#F6E3DD',
+  accentOn: '#F7F3EA',
+  okBg: '#E8ECE0',
+  okInk: '#2E4D2A',
+  warnBg: '#F3EAD3',
+  warnInk: '#6B4A12',
+  warnLine: '#D9C48F',
+  badBg: '#F6E3DD',
+  badInk: '#7A2418',
 } as const
 
-// Type tokens. System stack only, no webfont dependency.
+// Type tokens. Serif display face, system sans for body, mono for hashes.
+// No webfont dependency: the serif stack falls back to the system serif.
 export const TYPE = {
+  fontSerif:
+    '"Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif',
   fontSans:
     'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   fontMono:
-    'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
+    'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
   baseSizePx: 16,
-  lineHeightBody: 1.5,
-  lineHeightHeading: 1.2,
+  lineHeightBody: 1.55,
+  lineHeightHeading: 1.08,
   scale: {
-    xs: '0.8rem',
+    xs: '0.78rem',
     sm: '0.875rem',
     base: '1rem',
     lg: '1.125rem',
     xl: '1.375rem',
-    display: 'clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem)',
+    display: 'clamp(2.25rem, 1.9rem + 1.8vw, 3.25rem)',
   },
 } as const
 
@@ -81,7 +84,7 @@ export const TYPE = {
 // stays identical everywhere it appears.
 export const brandCopy = {
   footerIntro:
-    'Oathfold is a TapeOut Accelerate entry for OKX X Layer. It uses TAP-10 (TapeSend) and TAP-12 (sealed commitments and verdicts). Demo records are labelled DEMO FIXTURE and are not on chain. No token, no escrow, no payments, no AI verdicts.',
+    'Oathfold is a TapeOut Accelerate entry for OKX X Layer. TAP-10 / TAP-12. Demo records are labelled DEMO FIXTURE. No token, no escrow, no AI verdicts.',
   footerAttribution:
     'TapeKit send module: MIT, TapeOutProtocol/TapeKit commit f1831a4. TAP-10 Draft v1.1, TAP-12 Draft.',
   demoDisclaimer: 'DEMO FIXTURE: not on chain',

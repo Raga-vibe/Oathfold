@@ -64,7 +64,9 @@ export default function Create({ state }: { state: AppState }) {
   const [projectLink, setProjectLink] = useState('')
   const [evidence, setEvidence] = useState('public link')
   const [openLocal, setOpenLocal] = useState(() => toLocalInput(Math.floor(Date.now() / 1000) + 30 * 86400))
-  const [judgeInput, setJudgeInput] = useState('')
+  const [judgeInput, setJudgeInput] = useState(
+    () => import.meta.env.VITE_DEFAULT_JUDGE_ENDPOINT ?? '',
+  )
   const [authorInput, setAuthorInput] = useState('')
   const [program, setProgram] = useState('')
   const [errors, setErrors] = useState<string[]>([])
@@ -368,9 +370,8 @@ export default function Create({ state }: { state: AppState }) {
     <div>
       <h1>Create a commitment</h1>
       <p>
-        MVP scope: <strong>promise</strong> commitments only. A promise is a claim about your own
-        future conduct. Forecasts (claims about the world) are defined in TAP-12 but not offered
-        in this MVP, so the form rejects them.
+        Promise commitments only. A promise is a claim about your own future conduct.
+        Forecasts are defined in TAP-12 but not offered here.
       </p>
 
       {state.hub && state.hub.isSealed === false && (
@@ -425,13 +426,16 @@ export default function Create({ state }: { state: AppState }) {
         <input id="author" className="mono" value={authorInput} onChange={(e) => setAuthorInput(e.target.value)} placeholder="#1@2.344" />
         <label htmlFor="judge">Judge endpoint</label>
         <input id="judge" className="mono" value={judgeInput} onChange={(e) => setJudgeInput(e.target.value)} placeholder="#1@2.344" />
+        {import.meta.env.VITE_DEFAULT_JUDGE_ENDPOINT ? (
+          <p className="small">Judge provided by Oathfold.</p>
+        ) : null}
         <p className="small">
           The judge must have a usable TapeSend key. The judge can read the claim before the
           open time. Pick a judge you trust with it early.
         </p>
       </div>
 
-      <h2>Privacy preview: what is public, what is sealed</h2>
+      <h2>What is public, what is sealed</h2>
       <div className="card">
         <table>
           <thead><tr><th>Field</th><th>Visibility</th></tr></thead>
@@ -462,7 +466,7 @@ export default function Create({ state }: { state: AppState }) {
         </button>
       </p>
       <p className="small">
-        Live send signs two things at most in your wallet: a personal_sign for the key
+        Live send signs at most two things in your wallet: a personal_sign for the key
         derivation text, and the hub.send transaction (plus publishKey if your key is not the
         published one). No private key is ever handled by this app.
       </p>
