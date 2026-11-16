@@ -46,12 +46,28 @@ send has happened.
 - Live send flow is fully implemented and gated; it stops with a precise blocker message
   when the prerequisites are missing.
 
+## 2026-11-16: pushed to GitHub
+
+- Repo: https://github.com/Raga-vibe/Oathfold (already existed, confirmed empty before the first push).
+- First snapshot push: branch `main`, commit `49062e50d4e49ef49d4b7700f10697ec72bf96f1`, 42 files (root README, `app/`, `docs/`; research clones, node_modules and dist excluded). Verified live afterwards: the commit is on main, authored by Raga-vibe. The provider added an initial commit before the snapshot commit.
+- Public web deployment: Muse web artifact (slug `oathfold`) finished building and passed audit (no console errors, no mobile overflow; wallet connect, Create tab and privacy acknowledgement probed). It is a separate hosted build of the same spec; the verified source of truth is the GitHub repo above.
+
 ## What is blocked
 
 - Live send: no founder-owned opened container with a published TapeSend key exists yet
   on X Layer, so there is no usable judge endpoint and no holder wallet to send from.
   This is a precondition, not a code gap. The app must not claim a live send happened.
-- Deployment: not done. The parent agent deploys after verifying this build.
+- Deployment: web artifact build in progress, link pending.
+
+## 2026-11-16: skills round, GraphRAG, UI polish, API pass
+
+- Applied the installed skills where they fit, in three parallel workstreams with separate file ownership, then merged and verified by the parent agent.
+- Design and brand: restyled the UI under frontend-design, design, design-system, ui-styling, taste-skill, responsive-design and ui-ux-pro-max. Three-layer design tokens in `src/index.css`, `src/brand.ts` as the single source of truth (name, tagline "Make the promise before the result", voice rules, banned hype words), folded-corner brand mark, status by text plus dot shape, 4.5:1 body contrast, visible focus rings, 44px mobile touch targets, fluid type, no horizontal overflow. `EmptyState` and `Skeleton` components added. No page logic changed.
+- GraphRAG: new `src/lib/graph/` module (typed graph model, `buildGraph`, `authorHistory`, `judgeHistory`, `evidenceGraph`, `relatedCommitments`, `programGraph`, `answerAuthorRecord`) built only from verified records, designated verdicts only for counts, third-party kept separate, malformed and unrevealed counted visibly, rebuildable from chain data, no LLM and no automated verdict. Wired into Record detail, Dashboard and Reviewer console as labelled context only. 17 new tests.
+- API design: `docs/api-surface.md` (v1) and additive `src/lib/api.ts` facade, one error shape `{ code, message, recoverable, source }` with 11 codes, cursor pagination by 100-block windows, safe-finality guarantees, no-leak rule for sealed plaintext and content keys. API section added to `docs/architecture.md`.
+- Founder corrections applied in this round: banner-design dropped entirely (no banner file, no `app/public/`), slides deck dropped as a separate deliverable (draft removed to recoverable trash). Both recorded as explicitly not used in `docs/decisions.md` sections 14-15 and in `docs/skill-application.md`. GraphRAG and design-system decisions recorded in `docs/decisions.md` sections 16-17.
+- Verification by the parent agent after the merge: `npm test` 45 passed (25 TAP-12 protocol + 3 demo fixture + 17 graph), 3 test files, 0 failed. `npm run build` passes. One transient build failure reported by two agents (TS2783 duplicate key in the graph test file while it was being edited in parallel) was checked after the merge: the duplicate line is gone and the build passes cleanly.
+- Not pushed to GitHub and not deployed in this round; the parent agent verifies, pushes and deploys after this report.
 
 ## Next steps
 

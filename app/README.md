@@ -12,6 +12,21 @@ verdicts are recorded separately.
 **Hackathon:** OKX X Layer TapeOut Accelerate. Submit by 7 Dec 2026 23:59 UTC
 (provisional). $100k prize pool.
 
+## Brand
+
+- **Name:** Oathfold. **Tagline:** "Make the promise before the result".
+- **Voice:** confident, precise, calm, transparent. Say what is verified and what
+  is not, in plain language, with one job per sentence. Every claim names its
+  source or its limit. Never use the hype words "trustless truth",
+  "unbreakable", "guaranteed" or "fraud-proof".
+- **Tokens (single source of truth: `src/brand.ts`, mirrored in
+  `src/index.css`):** ink `#0F172A`, body `#334155`, muted `#475569`, line
+  `#E2E8F0`, background `#F8FAFC`, surface `#FFFFFF`, one accent blue
+  `#1E40AF` (strong `#1E3A8A`, tint `#EFF6FF`). Status colours are always paired
+  with a text label and a dot shape, never used by colour alone.
+- **Type:** system stack only, base 16px, line-height 1.5, tight headings.
+  Light theme only, no dark mode.
+
 ## Run it
 
 ```bash

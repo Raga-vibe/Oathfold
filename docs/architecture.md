@@ -99,3 +99,46 @@ derived from open times relative to build time: sealed (+30d), due (-2d), reveal
 - The wallet is trusted to hold the private key and to show the user exactly what they
   sign. The app never sees a private key.
 - Demo data is trusted by nobody: it is labelled and kept separate from live records.
+
+## Internal API surface (v1)
+
+The in-app record and indexer API is versioned as v1 and documented in full in
+`docs/api-surface.md`. The typed facade is `app/src/lib/api.ts`, which re-exports
+the key types and functions from `chain/xlayer.ts`, `indexer.ts`, `records.ts`,
+`store.ts`, and `protocol/tap12.ts` as thin wrappers, plus the shared
+`OathError` type. The facade is additive only; it changes no existing module.
+
+Summary of the v1 rules:
+
+- Versioning: additive changes keep v1; breaking changes (renamed function,
+  changed return shape, removed error code, changed finality rule) require v2.
+  Cache keys already carry the version (`oathfold.live.v1`).
+- Naming: resources are nouns (`records`, `messages`, `endpoints`, `keys`,
+  `hub`); functions are verbs on those nouns (`scanSentLogs`, `buildRecords`,
+  `resolveEndpoint`, `verifyHub`). Timestamps are Unix seconds; block numbers
+  are `bigint` in chain calls and `number` in stored records; hex is lowercase
+  `0x`-prefixed.
+- Errors: one shape, `{ code, message, recoverable, source }`, carried by
+  `OathError`. Codes: `wrong-chain`, `hub-changed`, `not-opened`,
+  `no-usable-key`, `stale-block`, `unavailable`, `digest-mismatch`,
+  `not-final`, `malformed-record`, `invalid-endpoint`, `unknown`.
+  `recoverable` is true only when retrying or fixing the named input can
+  succeed. Verification failures are shown as failed verification, never
+  hidden.
+- Pagination: chain reads paginate by block range, not page number.
+  `eth_getLogs` on `rpc.xlayer.tech` caps at 100 blocks, so every scan chunks
+  into 100-block windows and the cursor is the last scanned block
+  (`nextCursorAfter` returns `toBlock + 1`).
+- Safe finality: only messages at or below the safe block count as final
+  records. Pending is never a final record. Status derivation uses the pinned
+  safe-block time as `now`, never the wall clock.
+- No-leak rule: sealed plaintext and content keys never leave the client, and
+  never appear in API returns or logs, except for a content key already
+  published on chain inside a verified reveal or verdict.
+- Graph module: `src/lib/graph/` landed 16 November 2026 and is part of the
+  app (17 tests). Its public functions (`authorHistory`, `judgeHistory`,
+  `evidenceGraph`, `relatedCommitments`, `programGraph`,
+  `answerAuthorRecord`) are described in `docs/api-surface.md` section 7 and
+  as the `GraphApi` interface in the facade. The graph is built only from
+  verified records, is rebuildable from chain data, and returns context, never
+  a verdict. See `docs/decisions.md` section 16.

@@ -1,6 +1,11 @@
+// Shared UI primitives. Styled by src/index.css.
+// Skills applied: ui-styling (component states, accessible patterns),
+// ui-ux-pro-max (status never by colour alone: badge dot plus uppercase text
+// label), taste-skill (one system, plain copy, errors explain what to do next).
 import type { ReactNode } from 'react'
 import type { CommitmentStatus } from '../lib/protocol/tap12'
 import { statusLabel } from '../lib/protocol/tap12'
+import { brandCopy } from '../brand'
 
 export function StatusBadge({ status }: { status: CommitmentStatus }) {
   return (
@@ -13,9 +18,29 @@ export function StatusBadge({ status }: { status: CommitmentStatus }) {
 
 export function SourceBadge({ source }: { source: 'live' | 'demo' }) {
   if (source === 'demo') {
-    return <span className="badge demo">DEMO FIXTURE: not on chain</span>
+    return <span className="badge demo">{brandCopy.demoDisclaimer}</span>
   }
-  return <span className="badge live">LIVE: X Layer</span>
+  return <span className="badge live">{brandCopy.liveLabel}</span>
+}
+
+export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className="empty-state">
+      <strong>{title}</strong>
+      {children}
+    </div>
+  )
+}
+
+export function Skeleton({ width = '100%', height }: { width?: string; height?: string }) {
+  return (
+    <span
+      className="skeleton"
+      style={{ width, height }}
+      role="status"
+      aria-label="Loading"
+    />
+  )
 }
 
 export function Callout({ kind = 'warn', children }: { kind?: 'warn' | 'info' | 'ok' | 'bad'; children: ReactNode }) {

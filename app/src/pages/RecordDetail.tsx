@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { OathRecord } from '../lib/records'
 import { statusExplain, verifyDigest } from '../lib/protocol/tap12'
+import { buildGraph } from '../lib/graph/graph'
+import { RelatedCommitmentsPanel, EvidenceGraphPanel } from '../components/graph-panels'
 import { parsePayload } from '../lib/tapeout/send/payload.js'
 import { hexToBytes } from '../lib/tapeout/send/bytes.js'
 import { StatusBadge, SourceBadge, Callout, Kv, Copy } from '../components/ui'
@@ -9,6 +11,7 @@ import { xlayerExplorerTx } from '../lib/wallet'
 
 export default function RecordDetail({ id, records }: { id: string; records: OathRecord[] }) {
   const [showRaw, setShowRaw] = useState(false)
+  const graph = useMemo(() => buildGraph(records), [records])
   const record = records.find((r) => r.commitmentId.toLowerCase() === id.toLowerCase())
   if (!record) {
     return (
@@ -137,6 +140,10 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
           </div>
         ))
       )}
+
+      <h2>Graph context</h2>
+      <RelatedCommitmentsPanel graph={graph} commitmentId={record.commitmentId} />
+      <EvidenceGraphPanel graph={graph} commitmentId={record.commitmentId} />
 
       <h2>Verification</h2>
       <details open>

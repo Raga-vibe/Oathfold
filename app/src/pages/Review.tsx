@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { OathRecord } from '../lib/records'
 import { checkVerdictRules, buildVerdictContent } from '../lib/protocol/tap12'
+import { buildGraph } from '../lib/graph/graph'
+import { TrackRecordPanel, RelatedCommitmentsPanel, EvidenceGraphPanel } from '../components/graph-panels'
 import { StatusBadge, SourceBadge, Callout } from '../components/ui'
 import { formatTime } from '../lib/chain/xlayer'
 
@@ -24,6 +26,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
   const [errors, setErrors] = useState<string[]>([])
 
   const selected = queue.find((r) => r.commitmentId === selectedId) ?? queue[0]
+  const graph = useMemo(() => buildGraph(records), [records])
   const revealed = !!selected?.reveal
   const check = selected
     ? checkVerdictRules({
@@ -152,6 +155,22 @@ export default function Review({ records }: { records: OathRecord[] }) {
           )}
         </div>
       </div>
+      {selected && (
+        <div style={{ marginTop: 16 }}>
+          <h2>Graph context (CONTEXT ONLY)</h2>
+          <p className="small">
+            Graph context, not a judgement. This section only shows the verified record of
+            the author and the judge and the commitments that share evidence with this one.
+            It does not judge this commitment.
+          </p>
+          <div className="grid">
+            <TrackRecordPanel graph={graph} endpoint={selected.commitment.from} role="author" />
+            <TrackRecordPanel graph={graph} endpoint={selected.commitment.to} role="judge" />
+          </div>
+          <RelatedCommitmentsPanel graph={graph} commitmentId={selected.commitmentId} />
+          <EvidenceGraphPanel graph={graph} commitmentId={selected.commitmentId} />
+        </div>
+      )}
     </div>
   )
 }

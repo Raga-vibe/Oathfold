@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BRAND, brandCopy } from './brand'
 import { loadDemoRecords, loadLiveRecords } from './lib/store'
 import { verifyHub, type HubVerification } from './lib/chain/xlayer'
 import type { OathRecord } from './lib/records'
@@ -115,7 +116,11 @@ export default function App() {
   return (
     <div>
       <header className="topbar">
-        <a className="brand" href="#/">Oath<span>fold</span></a>
+        <a className="brand" href="#/">
+          <span className="brand-mark" aria-hidden="true" />
+          Oath<span>fold</span>
+        </a>
+        <span className="brand-tagline">{BRAND.tagline}</span>
         <nav className="nav" aria-label="Main">
           {NAV.map((n) => (
             <a key={n.href} href={n.href} className={route.name === n.route ? 'active' : ''}>
@@ -167,14 +172,10 @@ export default function App() {
         {route.name === 'live' && <Live state={state} />}
         {route.name === 'trust' && <Trust />}
         <footer className="footer">
+          <p>{brandCopy.footerIntro}</p>
           <p>
-            Oathfold is a TapeOut Accelerate entry for OKX X Layer. It uses TAP-10 (TapeSend)
-            and TAP-12 (sealed commitments and verdicts). Demo records are labelled DEMO FIXTURE
-            and are not on chain. No token, no escrow, no payments, no AI verdicts.
-          </p>
-          <p>
-            TapeKit send module: MIT, TapeOutProtocol/TapeKit commit f1831a4. TAP-10 Draft v1.1,
-            TAP-12 Draft. Hub: <span className="mono">0xe61A9C7213a6Aa616C246a2B569e555B417b25ee</span> on
+            {brandCopy.footerAttribution} Hub:{' '}
+            <span className="mono">0xe61A9C7213a6Aa616C246a2B569e555B417b25ee</span> on
             X Layer (chain 196).
           </p>
         </footer>

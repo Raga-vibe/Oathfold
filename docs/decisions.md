@@ -90,7 +90,23 @@ domain, because changing the text changes the derived key and breaks compatibili
 TapeSend-published keys. The Create page tells the user exactly what they are signing.
 Revisit only if TapeKit publishes an Oathfold-aware derivation text.
 
-## 13. Two RPCs, primary first, fallback on error
+## 14. Hackathon banner explicitly not used, at the founder's word
+
+16 November 2026: the founder corrected the brief to drop the banner-design asset entirely. No banner file exists in `app/public/` (the directory does not exist), no banner is mentioned in the app or docs except this record and `docs/skill-application.md`. The priority is a working and clean UI/UX only. Revisit only if the founder asks for a banner later.
+
+## 15. Slides pitch deck explicitly not used, at the founder's word
+
+16 November 2026: the founder corrected the brief to drop the slides deck as a separate deliverable. A draft deck was written and then removed (recoverable trash, restorable until 2026-12-16); no deck file exists in the workspace and no deck content was written elsewhere. The submission text lives in `docs/submission-draft.md` instead. Revisit only if the founder asks for a deck later.
+
+## 16. GraphRAG is retrieval over verified records, never a verdict
+
+`src/lib/graph/` builds a typed knowledge graph only from verified `OathRecord` objects (chain-verified records plus labelled demo fixtures), with every node and edge carrying its source block/message ref and a live/demo flag. Retrieval functions (`authorHistory`, `judgeHistory`, `evidenceGraph`, `relatedCommitments`, `programGraph`, `answerAuthorRecord`) return data, never judgement words. Designated verdicts alone feed hit/miss/undecidable counts; third-party verdicts are a separate bucket and are listed separately. Malformed and unrevealed records are graph nodes and are counted visibly, never dropped. The graph is rebuildable from chain data (re-run the indexer, rebuild the graph; no separate persistence). No LLM generation is involved and no automated verdict is produced. UI panels are labelled "Graph context, not a judgement" and "CONTEXT ONLY" in the reviewer console.
+
+## 17. Design system restyle, brand as code
+
+16 November 2026: the UI was restyled under the installed design skills to a three-layer token system in `src/index.css` (primitive values, semantic aliases, component values) with `src/brand.ts` as the single source of truth for name, tagline, voice rules, banned hype words and tokens. One accent colour, deep ink/graphite neutrals, status by text plus dot shape, 4.5:1 body contrast, visible focus rings, 44px mobile touch targets. Page class names and flows were preserved so the restyle could not break behaviour. Brand voice rules are enforced in code constants, not just in docs.
+
+## 18. Two RPCs, primary first, fallback on error
 
 Reads try `https://rpc.xlayer.tech` then `https://xlayerrpc.okx.com`. The second RPC
 returned no response in one earlier check, so it is a fallback, not a quorum partner.
