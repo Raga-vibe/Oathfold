@@ -143,3 +143,23 @@ the team, so no visitor or hackathon judge ever needs a container to try it. Whe
 the form shows the one-line note "Judge provided by Oathfold." Wallet connect stays only
 for live sends. A visitor who wants to send a live commitment of their own still needs
 their own opened container, which is a protocol requirement, not an Oathfold one.
+
+## 21. Trigger.dev dark system replaces the ledger look
+
+16 November 2026, founder decision: the founder uploaded his own style reference
+(`docs/design-reference.md`, Trigger.dev style spec) and asked for this style. It
+replaces the paper/ink ledger look from section 19, at the founder's word. Token
+mapping: paper #F7F3EA became slate canvas #1C1E21; raised paper #FFFDF7 became
+canvas cards on #1C1E21 with #272A2E hairlines; ink text became bone #E5E7EB, body
+became cloud #D7D9DD, muted became fog #878C99; wax-seal red #8A2B1D became Signal
+Lime #A8FF53 as the only filled accent (primary CTA, logo mark, active nav); serif
+display became Satoshi (Inter/system-ui substitute, 0.05em tracking at 36px+); mono
+stays locked at 14px for code, hashes, ids, addresses and timestamps, now on
+ink-well #121317 panes with the spec's syntax palette used only inside code
+contexts. Radius went from 2px to 4px on rectangles, 9999px kept for pills. No
+shadows in either system. No webfonts: Satoshi/Geist are substituted with the
+system stack so the build stays offline-safe. The record card became a code-editor
+pane (see the progress entry for this round). The "Checked live" line no longer
+reads "safe block pending": the safe-block part renders only once the hub read has
+landed, and the implementation is labelled "(expected)" until verified. Demo-first
+structure, routes, copy structure, protocol code and tests are unchanged.

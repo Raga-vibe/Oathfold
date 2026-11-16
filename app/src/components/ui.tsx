@@ -18,11 +18,22 @@ export function RecordCard({ record }: { record: OathRecord }) {
   const c = record.commitment
   const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'
   const designated = record.verdicts.find((v) => v.designated)
-  const steps: { label: string; value: string }[] = [
+  const steps: { label: string; value: ReactNode }[] = [
     { label: 'Seal', value: shortDate(c.blockTimestamp) },
     { label: 'Open', value: shortDate(record.open) },
     { label: 'Reveal', value: record.reveal ? shortDate(record.reveal.message.blockTimestamp) : 'Not yet' },
-    { label: 'Verdict', value: designated ? `${designated.outcome} · ${shortDate(designated.message.blockTimestamp)}` : 'Not yet' },
+    {
+      label: 'Verdict',
+      value: designated ? (
+        <>
+          {designated.outcome}
+          <br />
+          {shortDate(designated.message.blockTimestamp)}
+        </>
+      ) : (
+        'Not yet'
+      ),
+    },
   ]
   return (
     <article className="card record-card">
@@ -33,16 +44,19 @@ export function RecordCard({ record }: { record: OathRecord }) {
       <h3 className="record-card__title">
         <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>{title}</a>
       </h3>
-      <p className="record-card__meta">
-        Promise. Opens {shortDate(record.open)}. Judge{' '}
-        <span className="mono">{shortAddress('0x' + c.to.slice(-40))}</span>.
-      </p>
-      <p className="record-card__meta">
-        id <span className="mono">{record.commitmentId.slice(0, 26)}...</span>
-      </p>
-      <p className="record-card__payload" title={c.payload}>
-        {c.payload.slice(0, 66)}...
-      </p>
+      <pre className="record-card__payload" title={c.payload}>
+        <code>
+          <span className="tok-kw">const</span> <span className="tok-var">commitment</span> <span className="tok-def">=</span> <span className="tok-def">{'{'}</span>{'\n'}
+          {'  '}<span className="tok-prop">id</span><span className="tok-def">:</span> <span className="tok-str">"{record.commitmentId.slice(0, 26)}..."</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">status</span><span className="tok-def">:</span> <span className="tok-str">"{record.status}"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">kind</span><span className="tok-def">:</span> <span className="tok-str">"promise"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">open</span><span className="tok-def">:</span> <span className="tok-str">"{shortDate(record.open)}"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">judge</span><span className="tok-def">:</span> <span className="tok-str">"{shortAddress('0x' + c.to.slice(-40))}"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">sealed</span><span className="tok-def">:</span> <span className="tok-str">"{c.payload.slice(0, 42)}..."</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">revealed</span><span className="tok-def">:</span> <span className="tok-type">{record.reveal ? 'true' : 'false'}</span>{'\n'}
+          <span className="tok-def">{'}'}</span>
+        </code>
+      </pre>
       <ol className="record-card__steps">
         {steps.map((s) => (
           <li key={s.label}>
@@ -73,9 +87,19 @@ export function StatusBadge({ status }: { status: CommitmentStatus }) {
 
 export function SourceBadge({ source }: { source: 'live' | 'demo' }) {
   if (source === 'demo') {
-    return <span className="badge demo">{brandCopy.demoDisclaimer}</span>
+    return (
+      <span className="badge demo">
+        <span className="dot" aria-hidden="true" />
+        {brandCopy.demoDisclaimer}
+      </span>
+    )
   }
-  return <span className="badge live">{brandCopy.liveLabel}</span>
+  return (
+    <span className="badge live">
+      <span className="dot" aria-hidden="true" />
+      {brandCopy.liveLabel}
+    </span>
+  )
 }
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {

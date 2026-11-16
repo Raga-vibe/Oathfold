@@ -113,7 +113,7 @@ export default function App() {
   }
 
   const allRecords = [...liveState.records, ...demoRecords]
-  const hubState = hub === null ? 'Hub check pending' : hub.isSealed ? 'Hub sealed' : 'Hub not sealed'
+  const hubState = hub === null ? 'Hub check…' : hub.isSealed ? 'Hub sealed' : 'Hub not sealed'
 
   return (
     <div>
@@ -153,7 +153,8 @@ export default function App() {
             ) : (
               <span className="small">Wallet not connected</span>
             )}
-            <button className="btn secondary small" type="button" onClick={connect}>
+            <a className="btn small header-cta" href="#/create">Create</a>
+            <button className="btn ghost small" type="button" onClick={connect}>
               {wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
             </button>
           </div>

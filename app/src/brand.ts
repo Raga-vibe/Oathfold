@@ -33,50 +33,77 @@ export const BANNED_HYPE_WORDS = [
   'fraud-proof',
 ] as const
 
-// Colour tokens. Paper, ink, one wax-seal accent used sparingly.
-// Status colours are used with a text label and a shape, never by colour alone.
+// Colour tokens. Trigger.dev dark system (DESIGN.md, docs/design-reference.md):
+// slate canvas, ink-well inset, steel/graphite hairlines, bone/cloud/fog/ash
+// text, Signal Lime the only filled accent. Syntax palette lives inside code
+// contexts only. Status colours are used with a text label and a shape, never
+// by colour alone.
 export const COLORS = {
-  ink: '#211A13',
-  inkSoft: '#3D342A',
-  body: '#4A4136',
-  muted: '#6F6355',
-  faint: '#8A7D6C',
-  line: '#D9D0BC',
-  lineSoft: '#E6DFCD',
-  bg: '#F7F3EA',
-  surface: '#FFFDF7',
-  accent: '#8A2B1D',
-  accentStrong: '#7A2418',
-  accentBg: '#F6E3DD',
-  accentOn: '#F7F3EA',
-  okBg: '#E8ECE0',
-  okInk: '#2E4D2A',
-  warnBg: '#F3EAD3',
-  warnInk: '#6B4A12',
-  warnLine: '#D9C48F',
-  badBg: '#F6E3DD',
-  badInk: '#7A2418',
+  canvas: '#1C1E21',
+  inkWell: '#121317',
+  hairline: '#3B3E45',
+  steel: '#272A2E',
+  ash: '#B5B8C0',
+  fog: '#878C99',
+  cloud: '#D7D9DD',
+  bone: '#E5E7EB',
+  lime: '#A8FF53',
+  syntaxViolet: '#9C9AF2',
+  syntaxPink: '#FA3ABF',
+  eventViolet: '#7655FD',
+  loopGreen: '#AFEC73',
+  keyLime: '#D9F07C',
+  tagMagenta: '#E888F8',
+  muteRed: '#F43F5E',
+  // Legacy keys, mapped onto the dark system.
+  ink: '#E5E7EB',
+  inkSoft: '#D7D9DD',
+  body: '#D7D9DD',
+  muted: '#878C99',
+  faint: '#B5B8C0',
+  line: '#272A2E',
+  lineSoft: '#272A2E',
+  bg: '#1C1E21',
+  surface: '#1C1E21',
+  accent: '#A8FF53',
+  accentStrong: '#A8FF53',
+  accentBg: '#121317',
+  accentOn: '#121317',
+  okBg: '#121317',
+  okInk: '#AFEC73',
+  warnBg: '#121317',
+  warnInk: '#D7D9DD',
+  warnLine: '#3B3E45',
+  badBg: '#121317',
+  badInk: '#F43F5E',
 } as const
 
-// Type tokens. Serif display face, system sans for body, mono for hashes.
-// No webfont dependency: the serif stack falls back to the system serif.
+// Type tokens. Satoshi display and Geist body, both substituted with the
+// system stack (Inter/system-ui) so the build stays offline-safe. Geist Mono
+// locked at 14px for code, hashes, ids, addresses and timestamps.
 export const TYPE = {
-  fontSerif:
-    '"Iowan Old Style", Palatino, "Palatino Linotype", Georgia, "Times New Roman", serif',
+  fontSatoshi:
+    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   fontSans:
-    'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   fontMono:
-    'ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+    'ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  // Legacy key kept for any reader of the old shape.
+  fontSerif:
+    'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   baseSizePx: 16,
-  lineHeightBody: 1.55,
-  lineHeightHeading: 1.08,
+  lineHeightBody: 1.56,
+  lineHeightHeading: 1.2,
+  heroPx: 60,
+  heroTrackingPx: 3,
+  monoPx: 14,
   scale: {
-    xs: '0.78rem',
+    xs: '0.875rem',
     sm: '0.875rem',
     base: '1rem',
     lg: '1.125rem',
-    xl: '1.375rem',
-    display: 'clamp(2.25rem, 1.9rem + 1.8vw, 3.25rem)',
+    xl: '1.25rem',
+    display: 'clamp(2rem, 1.6rem + 4vw, 3.75rem)',
   },
 } as const
 

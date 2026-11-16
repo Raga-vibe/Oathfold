@@ -22,7 +22,7 @@ export default function Landing({ state }: { state: AppState }) {
             {featured && (
               <a className="btn" href={`#/record/${encodeURIComponent(featured.commitmentId)}`}>Explore a demo record</a>
             )}
-            <a href="#/create">Create a commitment</a>
+            <a className="btn ghost" href="#/create">Create a commitment</a>
           </p>
         </div>
         {featured && <RecordCard record={featured} />}
@@ -50,8 +50,12 @@ export default function Landing({ state }: { state: AppState }) {
 
       <p className="checked-line">
         <b>Checked live:</b> hub <span className="mono">{impl}</span>
-        {hub ? ' (read from chain)' : ' (expected, hub check pending)'} · chain 196 · safe block{' '}
-        <span className="mono">{safe ?? 'pending'}</span>{' '}
+        {hub ? ' (read from chain)' : ' (expected)'} · chain 196
+        {safe ? (
+          <>
+            {' '}· safe block <span className="mono">{safe}</span>
+          </>
+        ) : null}{' '}
         <a href="#/live">Live chain</a>
       </p>
     </div>

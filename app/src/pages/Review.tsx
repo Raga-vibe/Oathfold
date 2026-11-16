@@ -94,7 +94,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
             <div
               className="card"
               key={r.commitmentId}
-              style={selected?.commitmentId === r.commitmentId ? { borderColor: '#1d4ed8' } : undefined}
+              style={selected?.commitmentId === r.commitmentId ? { borderColor: '#a8ff53' } : undefined}
             >
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                 <StatusBadge status={r.status} />
@@ -147,7 +147,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
               {draft && (
                 <div>
                   <h3>Draft (not sent)</h3>
-                  <pre className="mono" style={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem' }}>{draft}</pre>
+                  <pre className="mono code-pane" style={{ whiteSpace: 'pre-wrap' }}>{draft}</pre>
                 </div>
               )}
             </div>
