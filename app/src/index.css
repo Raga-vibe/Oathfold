@@ -99,9 +99,9 @@ h1, h2, h3, h4 {
   color: var(--bone); font-family: var(--satoshi); font-weight: 500;
 }
 h1 { font-size: var(--text-display); line-height: 1; letter-spacing: 0.05em; }
-h2 { font-size: 1.875rem; line-height: 1.33; margin-top: 2.5rem; scroll-margin-top: 84px; letter-spacing: 0.025em; }
-h3 { font-size: 1.25rem; line-height: 1.4; margin-top: 1.5rem; letter-spacing: 0.025em; }
-h4 { font-size: 1rem; line-height: 1.4; margin-top: 1.25rem; }
+h2 { font-size: 1.875rem; line-height: 1.33; margin-top: 1.5rem; scroll-margin-top: 84px; letter-spacing: 0.025em; }
+h3 { font-size: 1.25rem; line-height: 1.4; margin-top: 1rem; letter-spacing: 0.025em; }
+h4 { font-size: 1rem; line-height: 1.4; margin-top: 1rem; }
 p { margin: 0 0 0.75rem; }
 small, .small { font-size: var(--text-sm); color: var(--fog); line-height: 1.43; }
 .mono { font-family: var(--mono); font-size: 14px; line-height: 1.43; word-break: break-all; }
@@ -177,7 +177,7 @@ small, .small { font-size: var(--text-sm); color: var(--fog); line-height: 1.43;
    Hover only changes border-color. */
 .card {
   background: var(--canvas); border: 1px solid var(--steel); border-radius: var(--radius);
-  padding: 24px 28px; margin: 14px 0;
+  padding: 16px 20px; margin: 10px 0;
   transition: border-color 150ms ease;
 }
 .card:hover { border-color: var(--hairline); }
@@ -185,10 +185,11 @@ small, .small { font-size: var(--text-sm); color: var(--fog); line-height: 1.43;
 .card:has(table) { overflow-x: auto; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 24px; }
 
-/* Hero: statement left, one real record right. */
+/* Hero: statement left, one real record right. Compact: the steps strip
+   starts close to the fold. */
 .hero {
-  display: grid; grid-template-columns: 5fr 6fr; gap: 48px;
-  padding: 96px 0 40px; align-items: start;
+  display: grid; grid-template-columns: 5fr 6fr; gap: 32px;
+  padding: 56px 0 24px; align-items: start;
 }
 .hero h1 { margin-bottom: 16px; }
 .hero__lead { font-size: 1.125rem; line-height: 1.5; color: var(--fog); max-width: 600px; margin-bottom: 24px; }
@@ -232,7 +233,7 @@ small, .small { font-size: var(--text-sm); color: var(--fog); line-height: 1.43;
 /* How it works: one compact strip, four steps, hairline dividers. */
 .steps-strip {
   border-top: 1px solid var(--steel);
-  padding: 28px 0 8px; margin-top: 80px;
+  padding: 20px 0 4px; margin-top: 40px;
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
 }
 .steps-strip h2 { grid-column: 1 / -1; margin: 0; font-size: 1.25rem; font-family: var(--satoshi); font-weight: 500; letter-spacing: 0.025em; }
@@ -241,22 +242,22 @@ small, .small { font-size: var(--text-sm); color: var(--fog); line-height: 1.43;
 
 /* Checked live: one mono line, real values, link to Live chain. */
 .checked-line {
-  border-top: 1px solid var(--steel); margin-top: 80px; padding-top: 16px;
+  border-top: 1px solid var(--steel); margin-top: 40px; padding-top: 16px;
   font-family: var(--mono); font-size: 14px; line-height: 1.43; color: var(--fog);
 }
 .checked-line b { color: var(--cloud); font-weight: 500; }
 .checked-line a { color: var(--fog); text-decoration: underline; text-underline-offset: 2px; }
 .checked-line a:hover { color: var(--bone); }
 
-label { display: block; font-weight: 500; font-size: 0.9rem; margin: 14px 0 4px; color: var(--bone); }
+label { display: block; font-weight: 500; font-size: 0.9rem; margin: 10px 0 4px; color: var(--bone); }
 input, textarea, select {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--steel); border-radius: var(--radius);
+  width: 100%; padding: 8px 12px; border: 1px solid var(--steel); border-radius: var(--radius);
   font-size: var(--text-base); font-family: var(--geist); background: var(--ink-well); color: var(--bone);
 }
 input::placeholder, textarea::placeholder { color: var(--fog); }
 input:hover, textarea:hover, select:hover { border-color: var(--hairline); }
 input.mono, textarea.mono { font-family: var(--mono); font-size: 14px; line-height: 1.43; }
-textarea { min-height: 110px; resize: vertical; }
+textarea { min-height: 72px; resize: vertical; }
 .field-error { color: var(--mute-red); font-size: 0.88rem; margin-top: 4px; }
 
 /*
@@ -287,7 +288,7 @@ textarea { min-height: 110px; resize: vertical; }
 .callout {
   border: 1px solid var(--hairline); border-left: 3px solid var(--fog);
   background: var(--ink-well); color: var(--cloud);
-  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0;
+  border-radius: var(--radius); padding: 10px 14px; margin: 10px 0;
 }
 .callout strong { color: var(--bone); }
 .callout.info { border-left-color: var(--cloud); }
@@ -306,7 +307,7 @@ textarea { min-height: 110px; resize: vertical; }
   background: var(--steel);
 }
 
-.kv { display: grid; grid-template-columns: 200px 1fr; gap: 6px 14px; font-size: 0.95rem; }
+.kv { display: grid; grid-template-columns: 200px 1fr; gap: 4px 14px; font-size: 0.95rem; }
 .kv dt { color: var(--fog); }
 .kv dd { margin: 0; word-break: break-all; color: var(--cloud); }
 .steps { counter-reset: step; padding-left: 0; list-style: none; }
@@ -333,19 +334,66 @@ details summary { cursor: pointer; font-weight: 500; color: var(--bone); }
 .timeline { list-style: none; padding: 0; }
 .timeline li { padding: 10px 0 10px 22px; border-left: 1px solid var(--steel); margin-left: 6px; position: relative; color: var(--cloud); }
 .timeline li::before { content: ""; position: absolute; left: -5px; top: 16px; width: 9px; height: 9px; border-radius: 50%; background: var(--lime); }
-.footer { margin-top: var(--space-12); padding-top: var(--space-5); border-top: 1px solid var(--steel); color: var(--fog); font-size: 0.88rem; }
+.footer { margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--steel); color: var(--fog); font-size: 0.88rem; }
 .footer p:last-child { margin-bottom: 0; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* Page head: title plus one plain line. */
-.page-head { padding-top: 40px; }
+.page-head { padding-top: 24px; }
 .page-head h1 { margin-bottom: 8px; font-size: 2.25rem; letter-spacing: 0.05em; }
 .page-head p { margin-bottom: 0; max-width: 40rem; color: var(--fog); }
 
+/* Compact record table (dashboard): one row per record, six scan in a screen. */
+.record-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 12px; }
+.record-table th { color: var(--fog); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.record-table td { padding: 9px 10px; border-bottom: 1px solid var(--steel); vertical-align: middle; }
+.record-table tbody tr:hover { background: var(--ink-well); }
+.record-row__id { display: block; color: var(--fog); margin-top: 2px; }
+
+/* Send stepper (Create): the send machine, drawn as compact steps. */
+.stepper {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px;
+  padding: 0; margin: 12px 0;
+}
+.stepper li {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; color: var(--fog); white-space: nowrap;
+}
+.stepper__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--steel); flex: none; }
+.stepper li.done { color: var(--cloud); }
+.stepper li.done .stepper__dot { background: var(--loop-green); }
+.stepper li.current { color: var(--bone); font-weight: 500; }
+.stepper li.current .stepper__dot { background: var(--lime); box-shadow: 0 0 0 2px var(--canvas), 0 0 0 3.5px var(--lime); }
+.stepper li.blocked { color: var(--mute-red); font-weight: 500; }
+.stepper li.blocked .stepper__dot { background: var(--mute-red); border-radius: 0; }
+
+/* Sticky action bar (Create, Review): the primary action is always visible,
+   fixed to the viewport bottom. The wrap's bottom padding clears it. */
+.action-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--ink-well); border-top: 1px solid var(--steel);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px max(var(--gut), calc((100vw - var(--wrap)) / 2 + var(--gut)));
+}
+.action-bar__status { font-size: 0.88rem; color: var(--fog); }
+
+/* Reviewer queue: one compact row per waiting commitment. */
+.queue { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--steel); }
+.queue-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 4px; border-bottom: 1px solid var(--steel); cursor: pointer;
+}
+.queue-row:hover { background: var(--ink-well); }
+.queue-row.selected { border-left: 3px solid var(--lime); padding-left: 8px; }
+.queue-row__title { font-weight: 500; color: var(--bone); flex: 1 1 160px; }
+
+/* Disclosure toggle buttons (graph context, verification). */
+.toggle-btn { margin: 4px 0 0; }
+
 /* Tablet and phone. */
 @media (max-width: 900px) {
-  .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 64px; }
-  .steps-strip { grid-template-columns: 1fr 1fr; margin-top: 64px; }
+  .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 48px; }
+  .steps-strip { grid-template-columns: 1fr 1fr; margin-top: 40px; }
   .two-col { grid-template-columns: 1fr; }
   .kv { grid-template-columns: 1fr; gap: 2px; }
   .kv dt { font-weight: 500; color: var(--cloud); }
@@ -379,7 +427,10 @@ details summary { cursor: pointer; font-weight: 500; color: var(--bone); }
   .record-card__steps { grid-template-columns: repeat(2, 1fr); row-gap: 8px; }
   .record-card__steps li:nth-child(3) { border-left: none; padding-left: 0; }
   .hero__actions .btn { width: 100%; }
-  .checked-line { margin-top: 64px; }
+  .checked-line { margin-top: 40px; }
+  .record-table { display: block; overflow-x: auto; }
+  .action-bar__status { flex-basis: 100%; }
+  .status-strip__inner { white-space: normal; }
 }
 @media (max-width: 640px) {
   h1 { font-size: 2rem; }

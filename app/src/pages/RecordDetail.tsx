@@ -8,12 +8,24 @@ import { hexToBytes } from '../lib/tapeout/send/bytes.js'
 import { StatusBadge, SourceBadge, Callout, Kv, Copy } from '../components/ui'
 import { formatTime, shortAddress } from '../lib/chain/xlayer'
 import { xlayerExplorerTx } from '../lib/wallet'
+import {
+  transitionDisclosure,
+  deriveRecordLookupState,
+  deriveRevealState,
+  type DisclosureState,
+} from '../lib/machines'
 
 export default function RecordDetail({ id, records }: { id: string; records: OathRecord[] }) {
-  const [showRaw, setShowRaw] = useState(false)
+  // Secondary panels are disclosure machines (src/lib/machines.ts): closed
+  // by default, opened by an explicit toggle. The record itself is found
+  // through the named lookup state, not an undefined check in the JSX.
+  const [rawDisc, setRawDisc] = useState<DisclosureState>('closed')
+  const [graphDisc, setGraphDisc] = useState<DisclosureState>('closed')
+  const [verifyDisc, setVerifyDisc] = useState<DisclosureState>('closed')
   const graph = useMemo(() => buildGraph(records), [records])
   const record = records.find((r) => r.commitmentId.toLowerCase() === id.toLowerCase())
-  if (!record) {
+  const lookupState = deriveRecordLookupState(record)
+  if (lookupState === 'not-found' || !record) {
     return (
       <div>
         <h1>Record not found</h1>
@@ -38,6 +50,16 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
   const designated = record.verdicts.filter((v) => v.designated)
   const thirdParty = record.verdicts.filter((v) => !v.designated)
   const judgeContainer = '0x' + c.to.slice(-40)
+  const revealState = deriveRevealState(record)
+  const verdictLine = designated.length > 0
+    ? `Designated verdict: ${designated[0].outcome}${designated[0].valid ? '' : ` (invalid: ${designated[0].error})`}`
+    : 'No designated verdict yet'
+
+  function toggle(which: 'raw' | 'graph' | 'verify') {
+    const [cur, set] = which === 'raw' ? [rawDisc, setRawDisc] : which === 'graph' ? [graphDisc, setGraphDisc] : [verifyDisc, setVerifyDisc]
+    const r = transitionDisclosure(cur, { type: 'toggle' })
+    if (r.ok) set(r.state)
+  }
 
   return (
     <div>
@@ -46,6 +68,9 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
         <SourceBadge source={record.source} />
       </div>
       <h1>{record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'}</h1>
+      <p className="small">
+        {verdictLine} · Reveal: {revealState} · Opens {formatTime(record.open)}
+      </p>
       <p className="small">{statusExplain(record.status, record.open)}</p>
       {record.malformedReason && (
         <Callout kind="bad"><strong>Malformed.</strong> {record.malformedReason}</Callout>
@@ -141,14 +166,25 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
         ))
       )}
 
-      <h2>Graph context</h2>
-      <RelatedCommitmentsPanel graph={graph} commitmentId={record.commitmentId} />
-      <EvidenceGraphPanel graph={graph} commitmentId={record.commitmentId} />
+      <h2>
+        <button className="btn ghost small toggle-btn" type="button" onClick={() => toggle('graph')} aria-expanded={graphDisc === 'open'}>
+          {graphDisc === 'open' ? 'Hide graph context' : 'Show graph context'} (CONTEXT ONLY)
+        </button>
+      </h2>
+      {graphDisc === 'open' && (
+        <div>
+          <RelatedCommitmentsPanel graph={graph} commitmentId={record.commitmentId} />
+          <EvidenceGraphPanel graph={graph} commitmentId={record.commitmentId} />
+        </div>
+      )}
 
-      <h2>Verification</h2>
-      <details open>
-        <summary>Verification drawer</summary>
-        <div style={{ marginTop: 12 }}>
+      <h2>
+        <button className="btn ghost small toggle-btn" type="button" onClick={() => toggle('verify')} aria-expanded={verifyDisc === 'open'}>
+          {verifyDisc === 'open' ? 'Hide verification' : 'Show verification'}
+        </button>
+      </h2>
+      {verifyDisc === 'open' && (
+        <div>
           <Kv rows={[
             ['Protocol', 'TAP-12 Draft over TAP-10 (TapeSend)'],
             ['Chain', 'X Layer (196)'],
@@ -177,11 +213,11 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
             <p><a href={xlayerExplorerTx(c.txHash)} target="_blank" rel="noreferrer">View transaction on the X Layer explorer</a></p>
           )}
           <p>
-            <button className="btn secondary small" type="button" onClick={() => setShowRaw((s) => !s)}>
-              {showRaw ? 'Hide raw ref and payload' : 'Show raw ref and payload'}
+            <button className="btn secondary small" type="button" onClick={() => toggle('raw')}>
+              {rawDisc === 'open' ? 'Hide raw ref and payload' : 'Show raw ref and payload'}
             </button>
           </p>
-          {showRaw && (
+          {rawDisc === 'open' && (
             <div>
               <p className="small">ref</p>
               <p className="mono">{c.ref}</p>
@@ -191,7 +227,7 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
             </div>
           )}
         </div>
-      </details>
+      )}
 
       <p><a href="#/dashboard">Back to the dashboard</a></p>
     </div>

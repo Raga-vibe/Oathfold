@@ -5,6 +5,13 @@ import { buildGraph } from '../lib/graph/graph'
 import { TrackRecordPanel, RelatedCommitmentsPanel, EvidenceGraphPanel } from '../components/graph-panels'
 import { StatusBadge, SourceBadge, Callout } from '../components/ui'
 import { formatTime } from '../lib/chain/xlayer'
+import {
+  transitionVerdictDraft,
+  transitionDisclosure,
+  draftAllowedOutcomes,
+  type VerdictDraftState,
+  type DisclosureState,
+} from '../lib/machines'
 
 export default function Review({ records }: { records: OathRecord[] }) {
   const nowSec = Math.floor(Date.now() / 1000)
@@ -24,6 +31,11 @@ export default function Review({ records }: { records: OathRecord[] }) {
   const [body, setBody] = useState('')
   const [draft, setDraft] = useState<string | null>(null)
   const [errors, setErrors] = useState<string[]>([])
+  // Verdict draft is one named machine (src/lib/machines.ts): idle, editing,
+  // invalid, ready. An illegal outcome (hit/miss on an unrevealed record) is
+  // rejected at selection time, not at build time.
+  const [draftState, setDraftState] = useState<VerdictDraftState>('idle')
+  const [graphDisc, setGraphDisc] = useState<DisclosureState>('closed')
 
   const selected = queue.find((r) => r.commitmentId === selectedId) ?? queue[0]
   const graph = useMemo(() => buildGraph(records), [records])
@@ -39,6 +51,32 @@ export default function Review({ records }: { records: OathRecord[] }) {
       })
     : { errors: [], early: false }
 
+  function selectRecord(id: string) {
+    setSelectedId(id)
+    setDraft(null)
+    setErrors([])
+    const rec = queue.find((r) => r.commitmentId === id)
+    if (rec && !draftAllowedOutcomes(!!rec.reveal).includes(outcome)) setOutcome('undecidable')
+    const r = transitionVerdictDraft(draftState, { type: 'select-record' })
+    if (r.ok) setDraftState(r.state)
+  }
+
+  function onEdit() {
+    const r = transitionVerdictDraft(draftState, { type: 'edit' })
+    if (r.ok) setDraftState(r.state)
+  }
+
+  function toggleGraph() {
+    const r = transitionDisclosure(graphDisc, { type: 'toggle' })
+    if (r.ok) setGraphDisc(r.state)
+  }
+
+  function shortDate(ts: number): string {
+    return new Date(ts * 1000).toUTCString().slice(5, 16)
+  }
+
+  const allowedOutcomes = draftAllowedOutcomes(revealed)
+
   function buildDraft() {
     if (!selected) return
     const errs: string[] = []
@@ -48,8 +86,12 @@ export default function Review({ records }: { records: OathRecord[] }) {
       if (!sourceName.trim() || !sourceValue.trim()) errs.push('Hit/miss verdicts require at least one source with a name and a value.')
     }
     if (!revealed && outcome !== 'undecidable') errs.push('This commitment has not been revealed, so the verdict must be undecidable.')
-    setErrors([...errs, ...check.errors])
-    if (errs.length || check.errors.length) return
+    const allErrors = [...errs, ...check.errors]
+    setErrors(allErrors)
+    const r = transitionVerdictDraft(draftState, { type: 'build', valid: allErrors.length === 0, errors: allErrors })
+    if (!r.ok) return
+    setDraftState(r.state)
+    if (r.state !== 'ready') return
     const bytes = buildVerdictContent({
       body: body.trim(),
       commitment: { chainId: 196, to: selected.commitment.to, inboxIndex: selected.commitment.inboxIndex },
@@ -89,21 +131,21 @@ export default function Review({ records }: { records: OathRecord[] }) {
         </Callout>
       )}
       <div className="two-col">
-        <div>
+        <div className="queue" role="listbox" aria-label="Commitments waiting for review">
           {queue.map((r) => (
             <div
-              className="card"
               key={r.commitmentId}
-              style={selected?.commitmentId === r.commitmentId ? { borderColor: '#a8ff53' } : undefined}
+              role="option"
+              aria-selected={selected?.commitmentId === r.commitmentId}
+              className={`queue-row${selected?.commitmentId === r.commitmentId ? ' selected' : ''}`}
+              onClick={() => selectRecord(r.commitmentId)}
             >
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                <StatusBadge status={r.status} />
-                <SourceBadge source={r.source} />
-              </div>
-              <h3>{r.demoTitle ?? r.revealedContent?.body ?? 'Sealed commitment'}</h3>
-              <p className="small">Opens {formatTime(r.open)}. {r.reveal ? 'Revealed.' : 'Not revealed yet.'}</p>
-              <button className="btn secondary small" type="button" onClick={() => { setSelectedId(r.commitmentId); setDraft(null); setErrors([]) }}>
-                Review this one
+              <StatusBadge status={r.status} />
+              <span className="queue-row__title">{r.demoTitle ?? r.revealedContent?.body ?? 'Sealed commitment'}</span>
+              <span className="small mono">Opens {shortDate(r.open)}</span>
+              <span className="small">{r.reveal ? 'Revealed' : 'Not revealed'}</span>
+              <button className="btn secondary small" type="button" onClick={(e) => { e.stopPropagation(); selectRecord(r.commitmentId) }}>
+                Review
               </button>
             </div>
           ))}
@@ -121,24 +163,33 @@ export default function Review({ records }: { records: OathRecord[] }) {
               )}
               {check.early && <Callout>Early: the open time has not passed yet. This verdict would be marked early.</Callout>}
               <label htmlFor="outcome">Outcome</label>
-              <select id="outcome" value={outcome} onChange={(e) => setOutcome(e.target.value as any)}>
-                <option value="hit">Hit</option>
-                <option value="miss">Miss</option>
-                <option value="undecidable">Undecidable</option>
+              <select
+                id="outcome"
+                value={outcome}
+                onChange={(e) => {
+                  const next = e.target.value as typeof outcome
+                  const r = transitionVerdictDraft(draftState, { type: 'set-outcome', outcome: next, revealed })
+                  if (!r.ok) return
+                  setDraftState(r.state)
+                  setOutcome(next)
+                }}
+              >
+                {(['hit', 'miss', 'undecidable'] as const).map((o) => (
+                  <option key={o} value={o} disabled={!allowedOutcomes.includes(o)}>
+                    {o}{!allowedOutcomes.includes(o) ? ' (needs a reveal)' : ''}
+                  </option>
+                ))}
               </select>
               <label htmlFor="vbody">Verdict in words (body)</label>
-              <textarea id="vbody" value={body} onChange={(e) => setBody(e.target.value)} placeholder="Hit. The release tag exists." />
+              <textarea id="vbody" value={body} onChange={(e) => { onEdit(); setBody(e.target.value) }} placeholder="Hit. The release tag exists." />
               <label htmlFor="reason">Reason (required)</label>
-              <input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Checked against the public release." />
+              <input id="reason" value={reason} onChange={(e) => { onEdit(); setReason(e.target.value) }} placeholder="Checked against the public release." />
               <label htmlFor="sname">Source name (required for hit/miss)</label>
-              <input id="sname" value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder="github-release" />
+              <input id="sname" value={sourceName} onChange={(e) => { onEdit(); setSourceName(e.target.value) }} placeholder="github-release" />
               <label htmlFor="svalue">Source value (required for hit/miss)</label>
-              <input id="svalue" value={sourceValue} onChange={(e) => setSourceValue(e.target.value)} placeholder="v1.0.0" />
+              <input id="svalue" value={sourceValue} onChange={(e) => { onEdit(); setSourceValue(e.target.value) }} placeholder="v1.0.0" />
               <label htmlFor="surl">Source URL (optional)</label>
-              <input id="surl" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://..." />
-              <p style={{ marginTop: 14 }}>
-                <button className="btn" type="button" onClick={buildDraft}>Build verdict draft</button>
-              </p>
+              <input id="surl" value={sourceUrl} onChange={(e) => { onEdit(); setSourceUrl(e.target.value) }} placeholder="https://..." />
               {errors.length > 0 && (
                 <Callout kind="bad">
                   <ul>{errors.map((e) => <li key={e}>{e}</li>)}</ul>
@@ -156,20 +207,41 @@ export default function Review({ records }: { records: OathRecord[] }) {
       </div>
       {selected && (
         <div style={{ marginTop: 16 }}>
-          <h2>Graph context (CONTEXT ONLY)</h2>
-          <p className="small">
-            Graph context, not a judgement. This section only shows the verified record of
-            the author and the judge and the commitments that share evidence with this one.
-            It does not judge this commitment.
-          </p>
-          <div className="grid">
-            <TrackRecordPanel graph={graph} endpoint={selected.commitment.from} role="author" />
-            <TrackRecordPanel graph={graph} endpoint={selected.commitment.to} role="judge" />
-          </div>
-          <RelatedCommitmentsPanel graph={graph} commitmentId={selected.commitmentId} />
-          <EvidenceGraphPanel graph={graph} commitmentId={selected.commitmentId} />
+          <button className="btn ghost small toggle-btn" type="button" onClick={toggleGraph} aria-expanded={graphDisc === 'open'}>
+            {graphDisc === 'open' ? 'Hide graph context' : 'Show graph context'} (CONTEXT ONLY)
+          </button>
+          {graphDisc === 'open' && (
+            <div>
+              <p className="small">
+                Graph context, not a judgement. This section only shows the verified record of
+                the author and the judge and the commitments that share evidence with this one.
+                It does not judge this commitment.
+              </p>
+              <div className="grid">
+                <TrackRecordPanel graph={graph} endpoint={selected.commitment.from} role="author" />
+                <TrackRecordPanel graph={graph} endpoint={selected.commitment.to} role="judge" />
+              </div>
+              <RelatedCommitmentsPanel graph={graph} commitmentId={selected.commitmentId} />
+              <EvidenceGraphPanel graph={graph} commitmentId={selected.commitmentId} />
+            </div>
+          )}
         </div>
       )}
+
+      <div className="action-bar" role="region" aria-label="Verdict actions">
+        <button className="btn" type="button" onClick={buildDraft} disabled={!selected}>
+          Build verdict draft
+        </button>
+        <span className="action-bar__status">
+          {draftState === 'ready'
+            ? 'Draft ready (not sent).'
+            : draftState === 'invalid'
+              ? 'Fix the errors above.'
+              : selected
+                ? `Reviewing: ${selected.demoTitle ?? 'this commitment'}`
+                : 'Nothing selected.'}
+        </span>
+      </div>
     </div>
   )
 }

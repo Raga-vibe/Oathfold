@@ -76,6 +76,27 @@ export function RecordCard({ record }: { record: OathRecord }) {
   )
 }
 
+/** One record as a compact table row, for the dashboard. The code-pane
+ * RecordCard stays for the hero and the detail page; rows are for scanning. */
+export function RecordRow({ record }: { record: OathRecord }) {
+  const c = record.commitment
+  const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'
+  const designated = record.verdicts.find((v) => v.designated)
+  return (
+    <tr>
+      <td><StatusBadge status={record.status} /></td>
+      <td>
+        <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>{title}</a>
+        <span className="record-row__id mono">{record.commitmentId.slice(0, 18)}…</span>
+      </td>
+      <td className="mono">{shortDate(record.open)}</td>
+      <td>{designated ? `${designated.outcome}${designated.valid ? '' : ' (invalid)'}` : '—'}</td>
+      <td><SourceBadge source={record.source} /></td>
+      <td><a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>Open</a></td>
+    </tr>
+  )
+}
+
 export function StatusBadge({ status }: { status: CommitmentStatus }) {
   return (
     <span className={`badge ${status}`}>

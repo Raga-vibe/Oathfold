@@ -163,3 +163,46 @@ pane (see the progress entry for this round). The "Checked live" line no longer
 reads "safe block pending": the safe-block part renders only once the hub read has
 landed, and the implementation is labelled "(expected)" until verified. Demo-first
 structure, routes, copy structure, protocol code and tests are unchanged.
+
+## 22. One shared state-machine module, hand-rolled
+
+16 November 2026. The app had sixteen implicit state machines: state inferred
+from two or more booleans, timestamps, nullable fields, or a chain read, in a
+different way on every page. The same fact had several names, and two of them
+disagreed (Live showed "Hub check pending" while the status strip said "Hub
+check failed"). Decision: one shared module, `app/src/lib/machines.ts`, as the
+single source of truth, following the pattern that worked on Podium. Hand-rolled
+and zero-dependency (no xstate): sixteen machines, each a union type plus one
+switch, fit in one file with no runtime cost and no new API to learn. If a
+machine ever grows async side effects or nested states, that is the moment to
+revisit, not before. Each machine has a named union type of states, one
+explicit transition function (state + event -> next state or an explicit
+rejection with a reason), guards encoding the real rules (unrevealed
+commitments can only receive undecidable; a verdict needs at least one evidence
+source; a send requires an opened container with a usable key; no transition
+out of a terminal state), and where a machine is derived from chain data, one
+pure function computing the named state from the raw inputs. Machine state is
+derived, never stored on chain and never a new stored shape; `tap12.ts` keeps
+the protocol semantics. The full inventory, with where each machine lived
+before and where it lives now, is in `docs/state-machines.md`. Deliberately
+left implicit: the vendored TapeKit send module (untouched, pure functions);
+the reveal K decryption steps (a linear check, the reveal machine names the
+outcome); graph build progress (synchronous, so `building` exists in the
+transition function but the derived state only returns `empty`/`ready`); the
+demo-store state in the UI (named and tested, not displayed, because the load
+result is invisible by design).
+
+## 23. Compact density: tables over cards, sticky action bars
+
+16 November 2026, same round as section 22. The dashboard card stack became a
+compact record table (status pill, title, open date, verdict, one action) so
+all 6 records scan in one screen; the RecordCard code pane stays for the hero
+and detail only. Track records moved behind a toggle below the table, gated on
+the graph machine being ready. Create and Review got a fixed sticky action bar
+at the viewport bottom so the primary action is always visible without
+scrolling, with the next action and its blocker in one line. RecordDetail
+reordered into one scannable column (verdict/status, code pane, timeline) with
+graph context and verification behind disclosure toggles. Hero padding and
+section gaps tightened so "How it works" starts near the fold. Same Trigger.dev
+dark tokens, lime only as the filled accent, 4px radii, hairlines, mono 14px.
+Verified by screenshots at 1440x900 and 390x844 with zero horizontal overflow.

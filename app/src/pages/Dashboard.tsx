@@ -3,7 +3,8 @@ import type { OathRecord } from '../lib/records'
 import type { CommitmentStatus } from '../lib/protocol/tap12'
 import { buildGraph } from '../lib/graph/graph'
 import { TrackRecordPanel } from '../components/graph-panels'
-import { RecordCard } from '../components/ui'
+import { RecordRow } from '../components/ui'
+import { transitionDisclosure, deriveGraphState, type DisclosureState } from '../lib/machines'
 
 // Demo author container and demo judge endpoint (see src/lib/demo.ts).
 const DEMO_AUTHOR = '0xa2e4592ebbd0a08cf49dc306358b064587ab3362'
@@ -21,25 +22,25 @@ export default function Dashboard({ records }: { records: OathRecord[] }) {
   const shown = filter === 'all' ? records : records.filter((r) => r.status === filter)
   const sorted = [...shown].sort((a, b) => b.commitment.blockTimestamp - a.commitment.blockTimestamp)
   const graph = useMemo(() => buildGraph(records), [records])
-  const showDemoTrackRecords = graph.nodes.some(
+  const graphState = deriveGraphState(graph)
+  const showDemoTrackRecords = graphState === 'ready' && graph.nodes.some(
     (n) => n.id === `author:${DEMO_AUTHOR.toLowerCase()}`,
   )
+  // Track records are graph context, not the record list: they sit behind a
+  // disclosure toggle below the table so the rows scan in one screen.
+  const [trackDisc, setTrackDisc] = useState<DisclosureState>('closed')
+
+  function toggleTracks() {
+    const r = transitionDisclosure(trackDisc, { type: 'toggle' })
+    if (r.ok) setTrackDisc(r.state)
+  }
 
   return (
     <div>
       <div className="page-head">
         <h1>Dashboard</h1>
-        <p>Every commitment, grouped by status. Unrevealed and malformed records are shown with the same prominence as judged ones.</p>
+        <p>Every commitment. Unrevealed and malformed records sit next to judged ones.</p>
       </div>
-      {showDemoTrackRecords && (
-        <div>
-          <h2>Track records (graph)</h2>
-          <div className="grid">
-            <TrackRecordPanel graph={graph} endpoint={DEMO_AUTHOR} role="author" />
-            <TrackRecordPanel graph={graph} endpoint={DEMO_JUDGE} role="judge" />
-          </div>
-        </div>
-      )}
       <div className="tabs" role="tablist" aria-label="Filter by status">
         {ALL.map((s) => (
           <button
@@ -56,11 +57,31 @@ export default function Dashboard({ records }: { records: OathRecord[] }) {
       {sorted.length === 0 && (
         <p>No records with this status yet. Run a live scan on the Live chain page, or look at the demo fixtures.</p>
       )}
-      <div className="grid">
-        {sorted.map((r) => (
-          <RecordCard key={r.commitmentId} record={r} />
-        ))}
-      </div>
+      {sorted.length > 0 && (
+        <table className="record-table">
+          <thead>
+            <tr><th>Status</th><th>Commitment</th><th>Open</th><th>Verdict</th><th>Source</th><th></th></tr>
+          </thead>
+          <tbody>
+            {sorted.map((r) => (
+              <RecordRow key={r.commitmentId} record={r} />
+            ))}
+          </tbody>
+        </table>
+      )}
+      {showDemoTrackRecords && (
+        <div style={{ marginTop: 16 }}>
+          <button className="btn ghost small toggle-btn" type="button" onClick={toggleTracks} aria-expanded={trackDisc === 'open'}>
+            {trackDisc === 'open' ? 'Hide track records' : 'Show track records'} (graph)
+          </button>
+          {trackDisc === 'open' && (
+            <div className="grid">
+              <TrackRecordPanel graph={graph} endpoint={DEMO_AUTHOR} role="author" />
+              <TrackRecordPanel graph={graph} endpoint={DEMO_JUDGE} role="judge" />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

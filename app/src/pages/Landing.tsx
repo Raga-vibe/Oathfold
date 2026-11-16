@@ -1,6 +1,7 @@
 import type { AppState } from '../App'
 import { RecordCard } from '../components/ui'
 import { shortAddress, HUB_IMPLEMENTATION_XLAYER } from '../lib/chain/xlayer'
+import { deriveHubState } from '../lib/machines'
 
 export default function Landing({ state }: { state: AppState }) {
   const demo = state.demoRecords
@@ -8,6 +9,7 @@ export default function Landing({ state }: { state: AppState }) {
   const hub = state.hub
   const impl = hub?.implementation ? shortAddress(hub.implementation) : shortAddress(HUB_IMPLEMENTATION_XLAYER)
   const safe = hub?.safeBlockNumber?.toString() ?? null
+  const hubState = deriveHubState(hub, false)
 
   return (
     <div>
@@ -50,7 +52,7 @@ export default function Landing({ state }: { state: AppState }) {
 
       <p className="checked-line">
         <b>Checked live:</b> hub <span className="mono">{impl}</span>
-        {hub ? ' (read from chain)' : ' (expected)'} · chain 196
+        {hubState === 'verified-sealed' || hubState === 'verified-unsealed' ? ' (read from chain)' : hubState === 'error' ? ' (check failed)' : ' (expected)'} · chain 196
         {safe ? (
           <>
             {' '}· safe block <span className="mono">{safe}</span>

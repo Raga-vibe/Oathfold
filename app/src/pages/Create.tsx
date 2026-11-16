@@ -1,7 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { x25519 } from '@noble/curves/ed25519.js'
 import type { AppState } from '../App'
 import { Callout, Copy } from '../components/ui'
+import {
+  transitionSend,
+  sendIsBusy,
+  sendStepLabel,
+  sendStepIndex,
+  deriveFormState,
+  SEND_STEPS,
+  type SendState,
+  type SendEvent,
+} from '../lib/machines'
 import {
   buildCommitmentRef,
   commitmentId,
@@ -33,17 +43,6 @@ import { decodeSentLog } from '../lib/indexer'
 import type { OathRecord, ChainMessage } from '../lib/records'
 import { DEMO_LABEL } from '../lib/demo'
 
-type Step =
-  | 'form'
-  | 'resolving'
-  | 'deriving'
-  | 'publishing'
-  | 'sealing'
-  | 'sending'
-  | 'confirming'
-  | 'done'
-  | 'blocked'
-
 interface LogLine {
   time: string
   text: string
@@ -70,13 +69,36 @@ export default function Create({ state }: { state: AppState }) {
   const [authorInput, setAuthorInput] = useState('')
   const [program, setProgram] = useState('')
   const [errors, setErrors] = useState<string[]>([])
-  const [step, setStep] = useState<Step>('form')
+  const [attempted, setAttempted] = useState(false)
+  // Live send is one named machine (src/lib/machines.ts). `busy` and the
+  // blocker are derived from the state, never stored separately. stepRef
+  // mirrors the state inside the async send flow so transitions always run
+  // from the current state, not a stale render closure.
+  const [step, setStep] = useState<SendState>('form')
+  const stepRef = useRef<SendState>('form')
   const [logs, setLogs] = useState<LogLine[]>([])
   const [blocker, setBlocker] = useState('')
   const [txHash, setTxHash] = useState('')
   const [finalId, setFinalId] = useState('')
-  const [busy, setBusy] = useState(false)
   const [savedDemoId, setSavedDemoId] = useState('')
+
+  const busy = sendIsBusy(step)
+  const formState = deriveFormState(attempted, errors)
+  const reachedRef = useRef(0)
+
+  function setSendStep(next: SendState) {
+    stepRef.current = next
+    const i = sendStepIndex(next)
+    if (i > reachedRef.current) reachedRef.current = i
+    setStep(next)
+  }
+
+  /** Run one send transition. Rejected transitions keep the current state. */
+  function go(event: SendEvent): boolean {
+    const r = transitionSend(stepRef.current, event)
+    if (r.ok) setSendStep(r.state)
+    return r.ok
+  }
 
   const openTs = useMemo(() => {
     const t = Date.parse(openLocal)
@@ -111,16 +133,15 @@ export default function Create({ state }: { state: AppState }) {
 
   function block(message: string) {
     setBlocker(message)
-    setStep('blocked')
-    setBusy(false)
+    go({ type: 'block', reason: message })
     log(`Blocked: ${message}`, false)
   }
 
   async function startLiveSend() {
+    setAttempted(true)
     const errs = validate()
     setErrors(errs)
     if (errs.length) return
-    setBusy(true)
     setLogs([])
     setTxHash('')
     setFinalId('')
@@ -132,15 +153,15 @@ export default function Create({ state }: { state: AppState }) {
         const w = await state.connect()
         walletAddress = w.address
         if (!w.connected || !walletAddress) {
-          block('Wallet is not connected. Connect your wallet, then try again.')
+          setErrors(['Wallet is not connected. Connect your wallet, then try again.'])
           return
         }
         if (w.chainId !== 196) {
-          block(`Wallet is on chain ${w.chainId}, not X Layer (196). Switch networks in your wallet and try again.`)
+          setErrors([`Wallet is on chain ${w.chainId}, not X Layer (196). Switch networks in your wallet and try again.`])
           return
         }
       }
-      setStep('resolving')
+      if (!go({ type: 'start', formValid: true })) return
       log('Resolving your endpoint and the judge endpoint on X Layer...')
       const [author, judge] = await Promise.all([resolveEndpoint(authorInput), resolveEndpoint(judgeInput)])
       if (author.status !== 'ok') {
@@ -164,7 +185,7 @@ export default function Create({ state }: { state: AppState }) {
         return
       }
       log(`Author ${author.label} held by you, opened. Judge ${judge.label} has a usable key.`)
-      setStep('deriving')
+      go({ type: 'resolved' })
       log('Asking your wallet to sign the TAP-10 key-derivation text (personal_sign). Your private key never leaves the wallet.')
       const derived = await deriveAuthorKey({
         holder: walletAddress,
@@ -177,7 +198,7 @@ export default function Create({ state }: { state: AppState }) {
       const publishedHex = author.key.key.toLowerCase()
       log(`Derived key ${derivedHex.slice(0, 18)}...`)
       if (publishedHex !== derivedHex) {
-        setStep('publishing')
+        go({ type: 'publish-needed' })
         log('Derived key differs from the published key. Asking your wallet to publish it (publishKey transaction)...')
         const pub = buildPublishKeyCalldata({
           circuits: author.circuits!,
@@ -189,10 +210,11 @@ export default function Create({ state }: { state: AppState }) {
         log(`publishKey sent: ${pubHash}. Waiting for receipt...`)
         await primaryClient.waitForTransactionReceipt({ hash: pubHash as `0x${string}` })
         log('publishKey confirmed.')
+        go({ type: 'published' })
       } else {
         log('Derived key matches the published key. No publishKey needed.')
+        go({ type: 'derived' })
       }
-      setStep('sealing')
       const judgePub = hexToBytes(judge.key.key as `0x${string}`)
       const sealed = sealCommitment({
         body: claimBody,
@@ -205,7 +227,7 @@ export default function Create({ state }: { state: AppState }) {
         nonce: '0x' + Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0'),
       })
       log(`Sealed. ref ${sealed.ref}. Payload ${sealed.payload.length} bytes. Digest is bound by the hub on send.`)
-      setStep('sending')
+      go({ type: 'sealed' })
       const send = buildSendCalldata({
         circuits: author.circuits!,
         tokenId: author.tokenId!,
@@ -223,7 +245,7 @@ export default function Create({ state }: { state: AppState }) {
         return
       }
       log(`Receipt confirmed in block ${receipt.blockNumber}. Waiting for safe finality before deriving a commitment id...`)
-      setStep('confirming')
+      go({ type: 'sent' })
       // Wait until the send block is at or below the safe block.
       let safe: bigint | null = null
       for (let i = 0; i < 120; i++) {
@@ -299,8 +321,7 @@ export default function Create({ state }: { state: AppState }) {
       })
       state.setLiveRecords([record, ...existing.records])
       setFinalId(id)
-      setStep('done')
-      setBusy(false)
+      go({ type: 'confirmed' })
       log(`Final. commitmentId ${id}.`, true)
     } catch (e: any) {
       block(e?.shortMessage ?? e?.message ?? String(e))
@@ -308,6 +329,7 @@ export default function Create({ state }: { state: AppState }) {
   }
 
   function saveAsDemo() {
+    setAttempted(true)
     const errs = validate()
     setErrors(errs)
     if (errs.length) return
@@ -376,11 +398,9 @@ export default function Create({ state }: { state: AppState }) {
 
       {state.hub && state.hub.isSealed === false && (
         <Callout>
-          <strong>Live send is blocked for most users right now.</strong> No founder-owned opened
-          container with a published TapeSend key exists yet on X Layer, so there is no usable
-          judge endpoint to seal to and no holder wallet to send from. The live flow below is
-          fully built and will run once that exists. Until then, save your commitment as a
-          clearly labelled DEMO FIXTURE to see the full record lifecycle.
+          <strong>Live send is blocked for most users right now.</strong> No founder-owned
+          opened container with a published TapeSend key exists yet on X Layer. Until then,
+          save your commitment as a clearly labelled DEMO FIXTURE to see the full lifecycle.
         </Callout>
       )}
 
@@ -457,14 +477,20 @@ export default function Create({ state }: { state: AppState }) {
       </div>
 
       <h2>Send</h2>
-      <p>
-        <button className="btn" type="button" onClick={startLiveSend} disabled={busy}>
-          {busy ? 'Working...' : 'Send live on X Layer'}
-        </button>{' '}
-        <button className="btn secondary" type="button" onClick={saveAsDemo} disabled={busy}>
-          Save as DEMO FIXTURE instead
-        </button>
-      </p>
+      <ol className="stepper" aria-label="Send progress">
+        {SEND_STEPS.map((s) => {
+          const i = sendStepIndex(s)
+          const done = i < reachedRef.current || step === 'done'
+          const current = s === step
+          const blockedHere = step === 'blocked' && i === reachedRef.current
+          return (
+            <li key={s} className={done ? 'done' : current ? 'current' : blockedHere ? 'blocked' : 'todo'}>
+              <span className="stepper__dot" aria-hidden="true" />
+              {sendStepLabel(s)}
+            </li>
+          )
+        })}
+      </ol>
       <p className="small">
         Live send signs at most two things in your wallet: a personal_sign for the key
         derivation text, and the hub.send transaction (plus publishKey if your key is not the
@@ -514,6 +540,26 @@ export default function Create({ state }: { state: AppState }) {
           <a href={`#/record/${encodeURIComponent(savedDemoId)}`}>Open the demo record</a>.
         </Callout>
       )}
+
+      <div className="action-bar" role="region" aria-label="Send actions">
+        <button className="btn" type="button" onClick={startLiveSend} disabled={busy}>
+          {busy ? `${sendStepLabel(step)}…` : 'Send live on X Layer'}
+        </button>
+        <button className="btn secondary" type="button" onClick={saveAsDemo} disabled={busy}>
+          Save as DEMO FIXTURE instead
+        </button>
+        <span className="action-bar__status">
+          {step === 'blocked' && blocker
+            ? `Blocked: ${blocker}`
+            : step === 'done'
+              ? 'Live commitment recorded at safe finality.'
+              : step === 'form'
+                ? formState === 'invalid'
+                  ? 'Fix the errors above, then send.'
+                  : 'Ready when the form is valid.'
+                : `${sendStepLabel(step)}…`}
+        </span>
+      </div>
     </div>
   )
 }

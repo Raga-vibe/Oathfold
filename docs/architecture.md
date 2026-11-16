@@ -19,7 +19,8 @@ app/src/
   main.tsx                 entry, renders <App/>
   App.tsx                  hash routing, wallet state, hub warning banner, footer
   index.css                design tokens and components
-  components/ui.tsx        StatusBadge, SourceBadge, Callout, Kv, Copy
+  components/ui.tsx        StatusBadge, SourceBadge, Callout, Kv, Copy, RecordRow
+                           (compact dashboard table row)
   pages/
     Landing.tsx            what/why/how, privacy warning, demo counts
     Dashboard.tsx          records grouped by status, all statuses equal
@@ -44,6 +45,12 @@ app/src/
     store.ts               localStorage cache for demo + live records
     wallet.ts              EIP-1193 connect, chain switch, key derivation by
                            personal_sign, publishKey/send calldata, tx send
+    machines.ts            16 explicit state machines + cross-machine send
+                           guard (see docs/state-machines.md). Hand-rolled,
+                           zero-dependency. Pages read one named state
+                           instead of re-inferring it from booleans.
+    machines.test.ts       52 tests: every state, legal transition and guard
+                           rejection per machine
 ```
 
 ## Data flow

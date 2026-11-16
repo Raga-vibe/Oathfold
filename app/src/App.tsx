@@ -5,6 +5,17 @@ import { verifyHub, type HubVerification } from './lib/chain/xlayer'
 import type { OathRecord } from './lib/records'
 import type { WalletState } from './lib/wallet'
 import { connectWallet, switchToXLayer } from './lib/wallet'
+import {
+  transitionWallet,
+  transitionRoute,
+  deriveWalletState,
+  deriveHubState,
+  hubStateLabel,
+  walletPhaseLabel,
+  type RouteMachineState,
+  type WalletFlight,
+  type WalletPhase,
+} from './lib/machines'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
 import Create from './pages/Create'
@@ -37,6 +48,21 @@ export function routeHref(route: string): string {
   return `#${route}`
 }
 
+/** The Route union from a route machine state. Exhaustive, so a new route
+ * name fails the build here instead of rendering nothing. */
+export function routeFromMachine(s: RouteMachineState): Route {
+  if (s.route === 'record' && s.recordId) return { name: 'record', id: s.recordId }
+  switch (s.route) {
+    case 'landing': return { name: 'landing' }
+    case 'dashboard': return { name: 'dashboard' }
+    case 'create': return { name: 'create' }
+    case 'review': return { name: 'review' }
+    case 'live': return { name: 'live' }
+    case 'trust': return { name: 'trust' }
+    default: return { name: 'landing' }
+  }
+}
+
 export interface AppState {
   demoRecords: OathRecord[]
   setDemoRecords: (r: OathRecord[]) => void
@@ -60,16 +86,37 @@ const NAV: { href: string; label: string; route: Route['name'] }[] = [
 ]
 
 export default function App() {
-  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash))
-  const [menuOpen, setMenuOpen] = useState(false)
+  // Route + mobile menu are one machine (src/lib/machines.ts): navigation
+  // and the menu move together, and an unknown hash lands on landing by a
+  // named rule instead of silently.
+  const [routeState, setRouteState] = useState<RouteMachineState>(() => {
+    const r = parseHash(window.location.hash)
+    return { route: r.name, recordId: r.name === 'record' ? r.id : null, menu: 'closed' }
+  })
+  const route = routeFromMachine(routeState)
   const [demoRecords, setDemoRecords] = useState<OathRecord[]>(() => loadDemoRecords())
   const [liveState, setLiveState] = useState(() => loadLiveRecords())
   const [liveMeta, setLiveMeta] = useState<AppState['liveMeta']>(liveState.meta)
   const [hub, setHub] = useState<HubVerification | null>(null)
   const [wallet, setWallet] = useState<WalletState>({ address: null, chainId: null, connected: false })
+  const [walletFlight, setWalletFlight] = useState<WalletFlight>('idle')
+
+  // Wallet phase is a named machine state, derived from the stored wallet
+  // plus the in-flight action (src/lib/machines.ts). The Connect button is
+  // disabled while a connect or switch is in flight.
+  const walletPhase: WalletPhase = deriveWalletState(wallet, walletFlight)
 
   useEffect(() => {
-    const onHash = () => setRoute(parseHash(window.location.hash))
+    const onHash = () => setRouteState((s) => {
+      const h = window.location.hash.replace(/^#/, '')
+      const known = h === '' || h === '/' || h.startsWith('/record/') ||
+        ['/dashboard', 'dashboard', '/create', 'create', '/review', 'review', '/live', 'live', '/trust', 'trust'].includes(h)
+      const parsed = parseHash(window.location.hash)
+      const r = known
+        ? transitionRoute(s, { type: 'navigate', route: parsed.name, recordId: parsed.name === 'record' ? parsed.id : undefined })
+        : transitionRoute(s, { type: 'unknown-hash' })
+      return r.ok ? r.state : s
+    })
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -83,20 +130,41 @@ export default function App() {
   }, [])
 
   const connect = async (): Promise<WalletState> => {
+    const start = transitionWallet(walletPhase, { type: 'connect-start' })
+    if (!start.ok) return wallet
+    setWalletFlight('connecting')
     const w = await connectWallet()
     setWallet(w)
-    if (w.connected && w.chainId !== 196) {
-      const sw = await switchToXLayer()
-      if (!sw.ok) {
-        const withErr = { ...w, error: sw.error }
-        setWallet(withErr)
-        return withErr
-      }
-      const switched = { ...w, chainId: 196, error: undefined }
-      setWallet(switched)
-      return switched
+    if (!w.connected || !w.address) {
+      transitionWallet('connecting', { type: 'connect-fail', error: w.error ?? 'connect failed' })
+      setWalletFlight('idle')
+      return w
     }
-    return w
+    const connected = transitionWallet('connecting', { type: 'connect-ok', chainId: w.chainId ?? 0 })
+    if (connected.state === 'ready') {
+      setWalletFlight('idle')
+      return w
+    }
+    // Wrong chain: switch, guarded by the machine.
+    const swStart = transitionWallet('connected-wrong-chain', { type: 'switch-start' })
+    if (!swStart.ok) {
+      setWalletFlight('idle')
+      return w
+    }
+    setWalletFlight('switching')
+    const sw = await switchToXLayer()
+    if (!sw.ok) {
+      transitionWallet('switching', { type: 'switch-fail', error: sw.error ?? 'switch failed' })
+      const withErr = { ...w, error: sw.error }
+      setWallet(withErr)
+      setWalletFlight('idle')
+      return withErr
+    }
+    transitionWallet('switching', { type: 'switch-ok' })
+    const switched = { ...w, chainId: 196, error: undefined }
+    setWallet(switched)
+    setWalletFlight('idle')
+    return switched
   }
 
   const state: AppState = {
@@ -113,7 +181,17 @@ export default function App() {
   }
 
   const allRecords = [...liveState.records, ...demoRecords]
-  const hubState = hub === null ? 'Hub check…' : hub.isSealed ? 'Hub sealed' : 'Hub not sealed'
+  const hubState = deriveHubState(hub, false)
+  const menuOpen = routeState.menu === 'open'
+  const toggleMenu = () => setRouteState((s) => {
+    const r = transitionRoute(s, { type: 'toggle-menu' })
+    return r.ok ? r.state : s
+  })
+  const closeMenu = () => setRouteState((s) => {
+    const r = transitionRoute(s, { type: 'close-menu' })
+    return r.ok ? r.state : s
+  })
+  const walletBusy = walletPhase === 'connecting' || walletPhase === 'switching'
 
   return (
     <div>
@@ -128,7 +206,7 @@ export default function App() {
             type="button"
             aria-expanded={menuOpen}
             aria-controls="main-nav"
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={toggleMenu}
           >
             {menuOpen ? 'Close' : 'Menu'}
           </button>
@@ -138,24 +216,23 @@ export default function App() {
                 key={n.href}
                 href={n.href}
                 className={route.name === n.route ? 'active' : ''}
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
               >
                 {n.label}
               </a>
             ))}
           </nav>
           <div className="walletbar">
-            {wallet.connected && wallet.address ? (
+            {walletPhase === 'ready' && wallet.address ? (
               <span className="small mono">
-                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                {wallet.chainId === 196 ? ' (X Layer)' : ` (chain ${wallet.chainId}, not X Layer)`}
+                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)} (X Layer)
               </span>
             ) : (
-              <span className="small">Wallet not connected</span>
+              <span className="small">{walletPhaseLabel(walletPhase)}</span>
             )}
             <a className="btn small header-cta" href="#/create">Create</a>
-            <button className="btn ghost small" type="button" onClick={connect}>
-              {wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
+            <button className="btn ghost small" type="button" onClick={connect} disabled={walletBusy}>
+              {walletBusy ? walletPhaseLabel(walletPhase) : wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
             </button>
           </div>
         </div>
@@ -163,10 +240,10 @@ export default function App() {
 
       <div className="status-strip">
         <div className="status-strip__inner">
-          <b>X Layer 196</b> · {hubState} ·{' '}
-          {wallet.connected && wallet.address
+          <b>X Layer 196</b> · {hubStateLabel(hubState)} ·{' '}
+          {walletPhase === 'ready' && wallet.address
             ? `Wallet ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
-            : 'No wallet'}{' '}
+            : walletPhaseLabel(walletPhase)}{' '}
           · <a href="#/live">Live chain</a>
         </div>
       </div>
