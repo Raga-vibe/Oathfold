@@ -77,13 +77,23 @@ export interface AppState {
 }
 
 const NAV: { href: string; label: string; route: Route['name'] }[] = [
-  { href: '#/', label: 'Home', route: 'landing' },
-  { href: '#/dashboard', label: 'Dashboard', route: 'dashboard' },
-  { href: '#/create', label: 'Create', route: 'create' },
-  { href: '#/review', label: 'Review', route: 'review' },
-  { href: '#/live', label: 'Live chain', route: 'live' },
-  { href: '#/trust', label: 'Trust', route: 'trust' },
+  { href: '#/dashboard', label: 'Promises', route: 'dashboard' },
+  { href: '#/create', label: 'Make a promise', route: 'create' },
+  { href: '#/review', label: 'Judge', route: 'review' },
+  { href: '#/live', label: 'Advanced', route: 'live' },
 ]
+
+/** Plain words for the hub state in the status strip. The machine state in
+ * src/lib/machines.ts is unchanged; this only relabels it. The record book
+ * is the hub; the strip never says "hub". */
+const HUB_PLAIN: Record<string, string> = {
+  unknown: 'Checking the record book…',
+  checking: 'Checking the record book…',
+  'verified-sealed': 'Record book sealed',
+  'verified-unsealed': 'Record book not sealed',
+  mismatch: 'Record book does not match',
+  error: 'Record book check failed',
+}
 
 export default function App() {
   // Route + mobile menu are one machine (src/lib/machines.ts): navigation
@@ -230,7 +240,7 @@ export default function App() {
             ) : (
               <span className="small">{walletPhaseLabel(walletPhase)}</span>
             )}
-            <a className="btn small header-cta" href="#/create">Create</a>
+            <a className="btn small header-cta" href="#/create">Make a promise</a>
             <button className="btn ghost small" type="button" onClick={connect} disabled={walletBusy}>
               {walletBusy ? walletPhaseLabel(walletPhase) : wallet.connected ? 'Reconnect wallet' : 'Connect wallet'}
             </button>
@@ -240,11 +250,11 @@ export default function App() {
 
       <div className="status-strip">
         <div className="status-strip__inner">
-          <b>X Layer 196</b> · {hubStateLabel(hubState)} ·{' '}
+          <b>X Layer 196</b> · {HUB_PLAIN[hubState] ?? hubStateLabel(hubState)} ·{' '}
           {walletPhase === 'ready' && wallet.address
             ? `Wallet ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
             : walletPhaseLabel(walletPhase)}{' '}
-          · <a href="#/live">Live chain</a>
+          · <a href="#/live">Advanced</a>
         </div>
       </div>
 
@@ -258,7 +268,8 @@ export default function App() {
         {route.name === 'trust' && <Trust />}
         <footer className="footer">
           <p>
-            {brandCopy.footerIntro} Hub <span className="mono">0xe61A...25ee</span> on X Layer (196).
+            {brandCopy.footerIntro}{' '}
+            <a href="#/live">Advanced</a> · <a href="#/trust">Trust and limits</a>
           </p>
         </footer>
       </main>

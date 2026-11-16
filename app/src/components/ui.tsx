@@ -4,26 +4,28 @@
 // label), taste-skill (one system, plain copy, errors explain what to do next).
 import type { ReactNode } from 'react'
 import type { CommitmentStatus } from '../lib/protocol/tap12'
-import { statusLabel } from '../lib/protocol/tap12'
 import type { OathRecord } from '../lib/records'
 import { shortAddress } from '../lib/chain/xlayer'
 import { brandCopy } from '../brand'
+import { STATUS_DISPLAY, STATUS_PLAIN } from '../lib/plain'
 
 function shortDate(ts: number): string {
   return new Date(ts * 1000).toUTCString().slice(5, 16)
 }
 
-/** One real record, rendered as a ledger entry. Same data and actions everywhere. */
+/** One real record, rendered as a ledger entry. Same data and actions everywhere.
+ * Plain words first: the code pane lists the promise in labelled lines, with
+ * the sealed bytes as one short line, not a wall of hex. */
 export function RecordCard({ record }: { record: OathRecord }) {
   const c = record.commitment
-  const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'
+  const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed promise'
   const designated = record.verdicts.find((v) => v.designated)
   const steps: { label: string; value: ReactNode }[] = [
-    { label: 'Seal', value: shortDate(c.blockTimestamp) },
-    { label: 'Open', value: shortDate(record.open) },
-    { label: 'Reveal', value: record.reveal ? shortDate(record.reveal.message.blockTimestamp) : 'Not yet' },
+    { label: 'Sealed', value: shortDate(c.blockTimestamp) },
+    { label: 'Opens', value: shortDate(record.open) },
+    { label: 'Opened', value: record.reveal ? shortDate(record.reveal.message.blockTimestamp) : 'Not yet' },
     {
-      label: 'Verdict',
+      label: 'Ruling',
       value: designated ? (
         <>
           {designated.outcome}
@@ -46,17 +48,18 @@ export function RecordCard({ record }: { record: OathRecord }) {
       </h3>
       <pre className="record-card__payload" title={c.payload}>
         <code>
-          <span className="tok-kw">const</span> <span className="tok-var">commitment</span> <span className="tok-def">=</span> <span className="tok-def">{'{'}</span>{'\n'}
-          {'  '}<span className="tok-prop">id</span><span className="tok-def">:</span> <span className="tok-str">"{record.commitmentId.slice(0, 26)}..."</span><span className="tok-def">,</span>{'\n'}
+          <span className="tok-def">{'{'}</span>{'\n'}
+          {'  '}<span className="tok-prop">promise</span><span className="tok-def">:</span> <span className="tok-str">"{title}"</span><span className="tok-def">,</span>{'\n'}
           {'  '}<span className="tok-prop">status</span><span className="tok-def">:</span> <span className="tok-str">"{record.status}"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">kind</span><span className="tok-def">:</span> <span className="tok-str">"promise"</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">open</span><span className="tok-def">:</span> <span className="tok-str">"{shortDate(record.open)}"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">opens</span><span className="tok-def">:</span> <span className="tok-str">"{shortDate(record.open)}"</span><span className="tok-def">,</span>{'\n'}
           {'  '}<span className="tok-prop">judge</span><span className="tok-def">:</span> <span className="tok-str">"{shortAddress('0x' + c.to.slice(-40))}"</span><span className="tok-def">,</span>{'\n'}
+          {'  '}<span className="tok-prop">ruling</span><span className="tok-def">:</span> <span className="tok-str">"{designated ? designated.outcome : 'not yet'}"</span><span className="tok-def">,</span>{'\n'}
           {'  '}<span className="tok-prop">sealed</span><span className="tok-def">:</span> <span className="tok-str">"{c.payload.slice(0, 42)}..."</span><span className="tok-def">,</span>{'\n'}
-          {'  '}<span className="tok-prop">revealed</span><span className="tok-def">:</span> <span className="tok-type">{record.reveal ? 'true' : 'false'}</span>{'\n'}
+          {'  '}<span className="tok-prop">opened</span><span className="tok-def">:</span> <span className="tok-type">{record.reveal ? 'true' : 'false'}</span>{'\n'}
           <span className="tok-def">{'}'}</span>
         </code>
       </pre>
+      <p className="record-card__meta">{STATUS_PLAIN[record.status]}</p>
       <ol className="record-card__steps">
         {steps.map((s) => (
           <li key={s.label}>
@@ -68,9 +71,9 @@ export function RecordCard({ record }: { record: OathRecord }) {
       {record.revealedContent && (
         <p className="record-card__meta">{String(record.revealedContent.body ?? '').slice(0, 140)}</p>
       )}
-      {record.malformedReason && <p className="record-card__meta">Malformed: {record.malformedReason}</p>}
+      {record.malformedReason && <p className="record-card__meta">Broken record: {record.malformedReason}</p>}
       <p className="record-card__foot">
-        <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>Open record</a>
+        <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>Open promise</a>
       </p>
     </article>
   )
@@ -80,7 +83,7 @@ export function RecordCard({ record }: { record: OathRecord }) {
  * RecordCard stays for the hero and the detail page; rows are for scanning. */
 export function RecordRow({ record }: { record: OathRecord }) {
   const c = record.commitment
-  const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'
+  const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed promise'
   const designated = record.verdicts.find((v) => v.designated)
   return (
     <tr>
@@ -101,7 +104,7 @@ export function StatusBadge({ status }: { status: CommitmentStatus }) {
   return (
     <span className={`badge ${status}`}>
       <span className="dot" aria-hidden="true" />
-      {statusLabel(status)}
+      {STATUS_DISPLAY[status]}
     </span>
   )
 }

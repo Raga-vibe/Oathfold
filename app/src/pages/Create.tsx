@@ -1,11 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
 import { x25519 } from '@noble/curves/ed25519.js'
 import type { AppState } from '../App'
-import { Callout, Copy } from '../components/ui'
+import { Callout } from '../components/ui'
 import {
   transitionSend,
   sendIsBusy,
-  sendStepLabel,
   sendStepIndex,
   deriveFormState,
   SEND_STEPS,
@@ -41,7 +40,7 @@ import {
 import { saveDemoRecord, saveLiveRecords, loadLiveRecords } from '../lib/store'
 import { decodeSentLog } from '../lib/indexer'
 import type { OathRecord, ChainMessage } from '../lib/records'
-import { DEMO_LABEL } from '../lib/demo'
+import { SEND_STEP_PLAIN, PRACTICE_LABEL } from '../lib/plain'
 
 interface LogLine {
   time: string
@@ -121,12 +120,12 @@ export default function Create({ state }: { state: AppState }) {
 
   function validate(): string[] {
     const e: string[] = []
-    if (title.trim().length < 3) e.push('Give the commitment a title (at least 3 characters).')
-    if (body.trim().length < 10) e.push('Write the claim in at least 10 characters.')
-    if (!openTs) e.push('Pick an open date and time.')
-    else if (openTs <= nowSec + 60) e.push('The open time must be in the future (at least 1 minute from now).')
-    if (!judgeInput.trim()) e.push('Enter the judge endpoint, e.g. #1@2.344.')
-    if (!authorInput.trim()) e.push('Enter your own endpoint, e.g. #1@2.344, so the live send can check you hold it.')
+    if (title.trim().length < 3) e.push('Give your promise a title (at least 3 characters).')
+    if (body.trim().length < 10) e.push('Write your promise in at least 10 characters.')
+    if (!openTs) e.push('Pick an open date.')
+    else if (openTs <= nowSec + 60) e.push('The open date must be in the future (at least 1 minute from now).')
+    if (!judgeInput.trim()) e.push('Enter your judge, e.g. #1@2.344.')
+    if (!authorInput.trim()) e.push('Enter your own account, e.g. #1@2.344, so the app can check you own it.')
     if (projectLink.trim() && !/^https?:\/\//.test(projectLink.trim())) e.push('Project link must start with http:// or https://.')
     return e
   }
@@ -162,31 +161,31 @@ export default function Create({ state }: { state: AppState }) {
         }
       }
       if (!go({ type: 'start', formValid: true })) return
-      log('Resolving your endpoint and the judge endpoint on X Layer...')
+      log('Checking your account and your judge on X Layer...')
       const [author, judge] = await Promise.all([resolveEndpoint(authorInput), resolveEndpoint(judgeInput)])
       if (author.status !== 'ok') {
-        block(`Your endpoint could not be used: ${author.error ?? author.status}. Live send needs a container you hold that is opened (paid).`)
+        block(`Your account could not be used: ${author.error ?? author.status}. Live sealing needs an account you own that is opened.`)
         return
       }
       if (judge.status !== 'ok') {
-        block(`Judge endpoint could not be used: ${judge.error ?? judge.status}. The judge container must exist and be opened.`)
+        block(`Your judge could not be used: ${judge.error ?? judge.status}. The judge's account must exist and be opened.`)
         return
       }
       if (!author.holder || author.holder.toLowerCase() !== walletAddress.toLowerCase()) {
-        block(`The connected wallet ${walletAddress} is not the current holder of ${author.label}. The holder is ${author.holder ?? 'unknown'}. hub.send() only accepts the current holder.`)
+        block(`The connected wallet ${walletAddress} does not own ${author.label}. The owner is ${author.holder ?? 'unknown'}. Only the owner can seal from that account.`)
         return
       }
       if (!author.key || !author.key.usable) {
-        block(`Your container ${author.label} has no usable TapeSend key. Publish a key first (step below), then send.`)
+        block(`Your account ${author.label} has no key set up. Set up your key first, then seal.`)
         return
       }
       if (!judge.key || !judge.key.usable) {
-        block(`Judge ${judge.label} has no usable TapeSend key (keyFor usable=false). A sealed payload cannot be built without the judge public key. Ask the judge to publish a key, or pick another judge.`)
+        block(`Your judge ${judge.label} has no key set up. A sealed promise cannot be built without the judge's key. Ask the judge to set one up, or pick another judge.`)
         return
       }
-      log(`Author ${author.label} held by you, opened. Judge ${judge.label} has a usable key.`)
+      log(`Your account ${author.label} is yours and opened. Your judge ${judge.label} has a key set up.`)
       go({ type: 'resolved' })
-      log('Asking your wallet to sign the TAP-10 key-derivation text (personal_sign). Your private key never leaves the wallet.')
+      log('Asking your wallet to sign the key setup. Your private key never leaves your wallet.')
       const derived = await deriveAuthorKey({
         holder: walletAddress,
         tokenId: author.tokenId!,
@@ -196,10 +195,10 @@ export default function Create({ state }: { state: AppState }) {
       })
       const derivedHex = derived.publicKeyHex.toLowerCase()
       const publishedHex = author.key.key.toLowerCase()
-      log(`Derived key ${derivedHex.slice(0, 18)}...`)
+      log('Your key is ready.')
       if (publishedHex !== derivedHex) {
         go({ type: 'publish-needed' })
-        log('Derived key differs from the published key. Asking your wallet to publish it (publishKey transaction)...')
+        log('Your key does not match the one on file. Asking your wallet to set it up...')
         const pub = buildPublishKeyCalldata({
           circuits: author.circuits!,
           tokenId: author.tokenId!,
@@ -207,12 +206,12 @@ export default function Create({ state }: { state: AppState }) {
           keyIndex: author.key.keyIndex,
         })
         const pubHash = await sendTransaction({ to: pub.to, data: pub.data, from: walletAddress })
-        log(`publishKey sent: ${pubHash}. Waiting for receipt...`)
+        log(`Key setup sent: ${pubHash}. Waiting for confirmation...`)
         await primaryClient.waitForTransactionReceipt({ hash: pubHash as `0x${string}` })
-        log('publishKey confirmed.')
+        log('Key set up.')
         go({ type: 'published' })
       } else {
-        log('Derived key matches the published key. No publishKey needed.')
+        log('Your key matches the one on file. Nothing to set up.')
         go({ type: 'derived' })
       }
       const judgePub = hexToBytes(judge.key.key as `0x${string}`)
@@ -226,7 +225,7 @@ export default function Create({ state }: { state: AppState }) {
         authorContainer: author.container!,
         nonce: '0x' + Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0'),
       })
-      log(`Sealed. ref ${sealed.ref}. Payload ${sealed.payload.length} bytes. Digest is bound by the hub on send.`)
+      log('Sealed. Your promise is locked.')
       go({ type: 'sealed' })
       const send = buildSendCalldata({
         circuits: author.circuits!,
@@ -235,16 +234,16 @@ export default function Create({ state }: { state: AppState }) {
         ref: sealed.ref,
         payloadHex: sealed.payloadHex,
       })
-      log('Asking your wallet to sign the hub.send transaction...')
+      log('Asking your wallet to sign the sealing transaction...')
       const hash = await sendTransaction({ to: send.to, data: send.data, from: walletAddress })
       setTxHash(hash)
-      log(`Sent. tx ${hash}. Waiting for receipt...`)
+      log(`Sent. tx ${hash}. Waiting for confirmation...`)
       const receipt = await primaryClient.waitForTransactionReceipt({ hash: hash as `0x${string}` })
       if (receipt.status !== 'success') {
-        block(`The send transaction reverted (tx ${hash}). Nothing was recorded. Check the explorer link for the revert reason.`)
+        block(`The sealing transaction failed (tx ${hash}). Nothing was recorded. Check the explorer link for the reason.`)
         return
       }
-      log(`Receipt confirmed in block ${receipt.blockNumber}. Waiting for safe finality before deriving a commitment id...`)
+      log('Confirmed. Waiting for the chain to settle before your promise ID is final...')
       go({ type: 'sent' })
       // Wait until the send block is at or below the safe block.
       let safe: bigint | null = null
@@ -255,7 +254,7 @@ export default function Create({ state }: { state: AppState }) {
         await new Promise((r) => setTimeout(r, 5000))
       }
       if (safe === null || receipt.blockNumber > safe) {
-        block(`The transaction is confirmed but not yet at safe finality (block ${receipt.blockNumber}, safe ${safe?.toString() ?? 'unknown'}). The commitment id is not final yet. Re-scan from the Live chain page once the safe block passes it. tx ${hash}.`)
+        block(`The transaction is confirmed, but the chain has not settled it yet. Your promise ID is not final yet. Check again from the Advanced page once it settles. tx ${hash}.`)
         return
       }
       // Rebuild the record from chain state: read inboxAt for the judge endpoint.
@@ -276,7 +275,7 @@ export default function Create({ state }: { state: AppState }) {
           })
         : null
       if (!sent) {
-        block(`Confirmed at safe finality, but the Sent event could not be read back for tx ${hash}. Re-scan from the Live chain page.`)
+        block(`Confirmed and settled, but the record could not be read back for tx ${hash}. Check again from the Advanced page.`)
         return
       }
       const inboxIndex = sent.inboxIndex
@@ -322,7 +321,7 @@ export default function Create({ state }: { state: AppState }) {
       state.setLiveRecords([record, ...existing.records])
       setFinalId(id)
       go({ type: 'confirmed' })
-      log(`Final. commitmentId ${id}.`, true)
+      log(`Sealed. Promise ID ${id}.`, true)
     } catch (e: any) {
       block(e?.shortMessage ?? e?.message ?? String(e))
     }
@@ -386,21 +385,19 @@ export default function Create({ state }: { state: AppState }) {
     setSavedDemoId(id)
   }
 
-  const previewRef = openTs ? buildCommitmentRef('promise', openTs) : ''
-
   return (
     <div>
-      <h1>Create a commitment</h1>
+      <h1>Make a promise</h1>
       <p>
-        Promise commitments only. A promise is a claim about your own future conduct.
-        Forecasts are defined in TAP-12 but not offered here.
+        A promise is a claim about your own future conduct. Write it, seal it like
+        an envelope, and let your judge rule on it in public.
       </p>
 
       {state.hub && state.hub.isSealed === false && (
         <Callout>
-          <strong>Live send is blocked for most users right now.</strong> No founder-owned
-          opened container with a published TapeSend key exists yet on X Layer. Until then,
-          save your commitment as a clearly labelled DEMO FIXTURE to see the full lifecycle.
+          <strong>Live sealing is blocked for most people right now.</strong> The
+          Oathfold judge account is not set up yet. Until then, save your promise as a
+          clearly labelled practice record to see the full journey.
         </Callout>
       )}
 
@@ -414,15 +411,15 @@ export default function Create({ state }: { state: AppState }) {
       <div className="card">
         <label htmlFor="title">Title</label>
         <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ship Oathfold v1" />
-        <label htmlFor="body">The claim, in plain words</label>
+        <label htmlFor="body">Your promise</label>
         <textarea id="body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="I will ship Oathfold v1 by 2027-01-01." />
         <div className="two-col">
           <div>
-            <label htmlFor="deliverable">Deliverable</label>
+            <label htmlFor="deliverable">What you will deliver</label>
             <input id="deliverable" value={deliverable} onChange={(e) => setDeliverable(e.target.value)} placeholder="Live app at the public URL" />
           </div>
           <div>
-            <label htmlFor="evidence">Evidence type</label>
+            <label htmlFor="evidence">Proof type</label>
             <select id="evidence" value={evidence} onChange={(e) => setEvidence(e.target.value)}>
               <option value="public link">Public link</option>
               <option value="repo release">Repo release</option>
@@ -431,53 +428,48 @@ export default function Create({ state }: { state: AppState }) {
             </select>
           </div>
         </div>
-        <label htmlFor="acceptance">Acceptance: how the judge checks it</label>
+        <label htmlFor="acceptance">How the judge checks it</label>
         <input id="acceptance" value={acceptance} onChange={(e) => setAcceptance(e.target.value)} placeholder="The live URL loads and the dashboard lists the record." />
         <label htmlFor="projectLink">Project link (optional)</label>
         <input id="projectLink" value={projectLink} onChange={(e) => setProjectLink(e.target.value)} placeholder="https://..." />
-        <label htmlFor="program">Program label (optional)</label>
+        <label htmlFor="program">Programme (optional)</label>
         <input id="program" value={program} onChange={(e) => setProgram(e.target.value)} placeholder="TapeOut Accelerate" />
-        <label htmlFor="open">Open date and time (your local time, {Intl.DateTimeFormat().resolvedOptions().timeZone})</label>
+        <label htmlFor="open">Open date (your local time, {Intl.DateTimeFormat().resolvedOptions().timeZone})</label>
         <input id="open" type="datetime-local" value={openLocal} onChange={(e) => setOpenLocal(e.target.value)} />
         {openTs > 0 && (
-          <p className="small">Open time in UTC: {new Date(openTs * 1000).toUTCString()} (unix {openTs}).</p>
+          <p className="small">Open date in UTC: {new Date(openTs * 1000).toUTCString()}</p>
         )}
-        <label htmlFor="author">Your endpoint (author)</label>
+        <label htmlFor="author">Your account</label>
         <input id="author" className="mono" value={authorInput} onChange={(e) => setAuthorInput(e.target.value)} placeholder="#1@2.344" />
-        <label htmlFor="judge">Judge endpoint</label>
+        <label htmlFor="judge">Judge</label>
         <input id="judge" className="mono" value={judgeInput} onChange={(e) => setJudgeInput(e.target.value)} placeholder="#1@2.344" />
         {import.meta.env.VITE_DEFAULT_JUDGE_ENDPOINT ? (
           <p className="small">Judge provided by Oathfold.</p>
         ) : null}
         <p className="small">
-          The judge must have a usable TapeSend key. The judge can read the claim before the
-          open time. Pick a judge you trust with it early.
+          Your judge needs a key set up. The judge can read your promise before the
+          open date, so pick someone you trust. Think of it as a sealed envelope:
+          everyone can see the envelope, only the judge can open it early.
         </p>
       </div>
 
-      <h2>What is public, what is sealed</h2>
+      <h2>What everyone can see, what stays hidden</h2>
       <div className="card">
         <table>
           <thead><tr><th>Field</th><th>Visibility</th></tr></thead>
           <tbody>
-            <tr><td>Kind: promise</td><td>Public, in the ref</td></tr>
-            <tr><td>Open time: {openTs ? new Date(openTs * 1000).toUTCString() : 'not set'}</td><td>Public, in the ref</td></tr>
-            <tr><td>Author endpoint and judge endpoint</td><td>Public, in the hub entry</td></tr>
-            <tr><td>Send time (block timestamp)</td><td>Public, in the hub entry</td></tr>
-            <tr><td>Claim text, deliverable, acceptance, links</td><td>Sealed until reveal</td></tr>
-            <tr><td>Content key K</td><td>Never published until reveal; reveals this message only</td></tr>
+            <tr><td>Type: promise</td><td>Public</td></tr>
+            <tr><td>Open date: {openTs ? new Date(openTs * 1000).toUTCString() : 'not set'}</td><td>Public</td></tr>
+            <tr><td>Your account and your judge</td><td>Public</td></tr>
+            <tr><td>Sealed time</td><td>Public</td></tr>
+            <tr><td>Promise text, deliverable, checks, links</td><td>Hidden until opened</td></tr>
+            <tr><td>Your key</td><td>Never shared until opened; opens this promise only</td></tr>
           </tbody>
         </table>
-        {previewRef && (
-          <p className="small" style={{ marginTop: 12 }}>
-            Commitment ref (public): <span className="mono">{previewRef}</span>{' '}
-            <Copy text={previewRef} />
-          </p>
-        )}
       </div>
 
-      <h2>Send</h2>
-      <ol className="stepper" aria-label="Send progress">
+      <h2>Seal it</h2>
+      <ol className="stepper" aria-label="Sealing progress">
         {SEND_STEPS.map((s) => {
           const i = sendStepIndex(s)
           const done = i < reachedRef.current || step === 'done'
@@ -486,31 +478,30 @@ export default function Create({ state }: { state: AppState }) {
           return (
             <li key={s} className={done ? 'done' : current ? 'current' : blockedHere ? 'blocked' : 'todo'}>
               <span className="stepper__dot" aria-hidden="true" />
-              {sendStepLabel(s)}
+              {SEND_STEP_PLAIN[s]}
             </li>
           )
         })}
       </ol>
       <p className="small">
-        Live send signs at most two things in your wallet: a personal_sign for the key
-        derivation text, and the hub.send transaction (plus publishKey if your key is not the
-        published one). No private key is ever handled by this app.
+        Sealing live asks your wallet to sign at most twice: once to set up your key,
+        once to seal. No private key is ever handled by this app.
       </p>
 
       {step === 'blocked' && blocker && (
         <Callout kind="bad">
-          <strong>Live send blocked.</strong> {blocker}
+          <strong>Could not seal this live.</strong> {blocker}
           <p style={{ marginTop: 8 }}>
-            You can still save this commitment as a DEMO FIXTURE to preview the full record.
-            It will be labelled {DEMO_LABEL} and is not on chain.
+            You can still save this promise as a practice record to preview the full
+            journey. It will be labelled &ldquo;{PRACTICE_LABEL}&rdquo; and is not on chain.
           </p>
-          <button className="btn secondary" type="button" onClick={saveAsDemo}>Save as DEMO FIXTURE</button>
+          <button className="btn secondary" type="button" onClick={saveAsDemo}>Save as a practice record</button>
         </Callout>
       )}
 
       {logs.length > 0 && (
         <div className="card">
-          <h3>Send log</h3>
+          <h3>Sealing log</h3>
           <ol>
             {logs.map((l, i) => (
               <li key={i} className="small">
@@ -525,8 +516,8 @@ export default function Create({ state }: { state: AppState }) {
           )}
           {step === 'done' && finalId && (
             <Callout kind="ok">
-              <strong>Live commitment recorded at safe finality.</strong>{' '}
-              commitmentId <span className="mono">{finalId}</span>.{' '}
+              <strong>Live promise recorded.</strong>{' '}
+              Promise ID <span className="mono">{finalId}</span>.{' '}
               <a href={`#/record/${encodeURIComponent(finalId)}`}>Open the record</a>.
             </Callout>
           )}
@@ -535,29 +526,29 @@ export default function Create({ state }: { state: AppState }) {
 
       {savedDemoId && (
         <Callout>
-          <strong>Saved as {DEMO_LABEL}.</strong> This is a local demo record built with real
-          seal(), not a live transaction.{' '}
+          <strong>Saved as a practice record.</strong> This is a local practice record
+          built with real sealing, not a live transaction.{' '}
           <a href={`#/record/${encodeURIComponent(savedDemoId)}`}>Open the demo record</a>.
         </Callout>
       )}
 
       <div className="action-bar" role="region" aria-label="Send actions">
         <button className="btn" type="button" onClick={startLiveSend} disabled={busy}>
-          {busy ? `${sendStepLabel(step)}…` : 'Send live on X Layer'}
+          {busy ? `${SEND_STEP_PLAIN[step]}…` : 'Seal live on X Layer'}
         </button>
         <button className="btn secondary" type="button" onClick={saveAsDemo} disabled={busy}>
-          Save as DEMO FIXTURE instead
+          Save as a practice record instead
         </button>
         <span className="action-bar__status">
           {step === 'blocked' && blocker
             ? `Blocked: ${blocker}`
             : step === 'done'
-              ? 'Live commitment recorded at safe finality.'
+              ? 'Live promise recorded.'
               : step === 'form'
                 ? formState === 'invalid'
-                  ? 'Fix the errors above, then send.'
+                  ? 'Fix the errors above, then seal.'
                   : 'Ready when the form is valid.'
-                : `${sendStepLabel(step)}…`}
+                : `${SEND_STEP_PLAIN[step]}…`}
         </span>
       </div>
     </div>

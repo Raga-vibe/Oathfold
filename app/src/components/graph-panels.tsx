@@ -1,8 +1,8 @@
-// Graph context panels for Oathfold.
-// Retrieval only: these panels show what the verified graph already says.
-// They never judge a record, an author or a judge. Every panel carries the
-// label "Graph context, not a judgement", and a DEMO FIXTURE label when the
-// underlying records are demo fixtures.
+// Background panels for Oathfold (the graph layer).
+// Retrieval only: these panels show what the verified record already says.
+// They never rule on a promise, a person or a judge. Every panel carries the
+// label "Background, not a ruling", and a practice-record label when the
+// underlying records are practice records.
 import type { OathGraph, RelatedReason } from '../lib/graph/graph'
 import {
   authorHistory,
@@ -11,6 +11,7 @@ import {
   evidenceGraph,
 } from '../lib/graph/graph'
 import { shortAddress, formatTime } from '../lib/chain/xlayer'
+import { GRAPH_NOTE, PRACTICE_DISCLAIMER, PRACTICE_INCLUDES } from '../lib/plain'
 
 const REASON_LABELS: Record<RelatedReason, string> = {
   'same-author': 'Same author',
@@ -30,10 +31,10 @@ function DemoLabel({ graph, commitmentIds }: { graph: OathGraph; commitmentIds: 
     ),
   )
   if (sources.size === 1 && sources.has('demo')) {
-    return <span className="badge demo">DEMO FIXTURE: not on chain</span>
+    return <span className="badge demo">{PRACTICE_DISCLAIMER}</span>
   }
   if (sources.has('demo')) {
-    return <span className="badge demo">Includes DEMO FIXTURE records</span>
+    return <span className="badge demo">{PRACTICE_INCLUDES}</span>
   }
   return null
 }
@@ -52,16 +53,16 @@ export function TrackRecordPanel({
   const history = role === 'author' ? authorHistory(graph, endpoint) : judgeHistory(graph, endpoint)
   return (
     <div className="card">
-      <h3>{title ?? (role === 'author' ? 'Author track record' : 'Judge track record')}</h3>
-      <p className="small">Graph context, not a judgement.</p>
+      <h3>{title ?? (role === 'author' ? 'Promises by this person' : 'Rulings by this judge')}</h3>
+      <p className="small">{GRAPH_NOTE}</p>
       <p className="small mono">{shortAddress(endpoint)}</p>
       <DemoLabel graph={graph} commitmentIds={history.commitmentIds} />
       {history.total === 0 ? (
-        <p className="small">No verified commitments found for this endpoint in the current records.</p>
+        <p className="small">No verified promises found for this account in the current records.</p>
       ) : (
         <div>
           <p className="small">
-            {history.total} commitment{history.total === 1 ? '' : 's'} in the graph.
+            {history.total} promise{history.total === 1 ? '' : 's'} in this list.
           </p>
           <ul className="small">
             {STATUSES.map((s) => (
@@ -71,16 +72,16 @@ export function TrackRecordPanel({
             ))}
           </ul>
           <p className="small">
-            Designated verdicts (counted): {history.designated.hit} hit,{' '}
-            {history.designated.miss} miss, {history.designated.undecidable} undecidable.
+            The judge's rulings (counted): {history.designated.hit} hit,{' '}
+            {history.designated.miss} miss, {history.designated.undecidable} cannot decide.
           </p>
           <p className="small">
-            Third-party verdicts (listed separately, never counted above):{' '}
+            Other people's calls (listed separately, never counted above):{' '}
             {history.thirdParty.hit} hit, {history.thirdParty.miss} miss,{' '}
             {history.thirdParty.undecidable} undecidable.
           </p>
           <p className="small">
-            Malformed: {history.malformed}. Unrevealed: {history.unrevealed}.
+            Broken: {history.malformed}. Still locked: {history.unrevealed}.
           </p>
           <ul className="small">
             {history.commitmentIds.map((id) => (
@@ -106,11 +107,11 @@ export function RelatedCommitmentsPanel({
   const relatedIds = related.map((r) => r.commitmentId)
   return (
     <div className="card">
-      <h3>Related commitments</h3>
-      <p className="small">Graph context, not a judgement.</p>
+      <h3>Related promises</h3>
+      <p className="small">{GRAPH_NOTE}</p>
       <DemoLabel graph={graph} commitmentIds={relatedIds} />
       {related.length === 0 ? (
-        <p className="small">No related commitments in the current records.</p>
+        <p className="small">No related promises in the current records.</p>
       ) : (
         <ul>
           {related.map((r) => {
@@ -141,36 +142,35 @@ export function EvidenceGraphPanel({
   const allIds = [commitmentId]
   return (
     <div className="card">
-      <h3>Evidence graph</h3>
-      <p className="small">Graph context, not a judgement.</p>
+      <h3>Proof</h3>
+      <p className="small">{GRAPH_NOTE}</p>
       <DemoLabel graph={graph} commitmentIds={allIds} />
       {!ev.commitment ? (
-        <p className="small">No graph entry for this commitment.</p>
+        <p className="small">No background for this promise yet.</p>
       ) : (
         <div>
           <p className="small">
-            Commitment: {ev.commitment.label} (status {ev.commitment.data.status ?? 'unknown'}).
-            Source ref: <span className="mono">{ev.commitment.ref}</span>
+            Promise: {ev.commitment.label} (status {ev.commitment.data.status ?? 'unknown'}).
           </p>
           {ev.reveal ? (
             <p className="small">
-              Revealed by {ev.reveal.by?.label ?? 'unknown'} ({ev.reveal.ref}).
+              Opened by {ev.reveal.by?.label ?? 'unknown'}.
             </p>
           ) : (
-            <p className="small">No verified reveal in the graph.</p>
+            <p className="small">No verified opening yet.</p>
           )}
-          <h4>Designated judge verdicts</h4>
+          <h4>The judge's rulings</h4>
           {ev.designatedVerdicts.length === 0 ? (
             <p className="small">None.</p>
           ) : (
             ev.designatedVerdicts.map((entry, i) => (
               <div key={i}>
                 <p className="small">
-                  <strong>{entry.verdict.data.outcome}</strong> ({entry.verdict.ref})
+                  <strong>{entry.verdict.data.outcome}</strong>
                   {entry.verdict.data.reason ? ` Reason: ${entry.verdict.data.reason}` : ''}
                 </p>
                 {entry.evidence.length === 0 ? (
-                  <p className="small">No evidence sources cited.</p>
+                  <p className="small">No proof cited.</p>
                 ) : (
                   <ul>
                     {entry.evidence.map((s, j) => (
@@ -192,9 +192,9 @@ export function EvidenceGraphPanel({
               </div>
             ))
           )}
-          <h4>Third-party verdicts</h4>
+          <h4>Other people's calls</h4>
           {ev.thirdPartyVerdicts.length === 0 ? (
-            <p className="small">None. Third-party verdicts are listed separately and never merged with the designated judge verdict.</p>
+            <p className="small">None. Other people's calls are listed separately and never counted with the judge's ruling.</p>
           ) : (
             ev.thirdPartyVerdicts.map((entry, i) => (
               <div key={i}>
@@ -202,8 +202,7 @@ export function EvidenceGraphPanel({
                   <strong>{entry.verdict.data.outcome}</strong> by{' '}
                   <span className="mono">
                     {entry.verdict.data.from ? shortAddress(entry.verdict.data.from) : 'unknown'}
-                  </span>{' '}
-                  ({entry.verdict.ref})
+                  </span>
                 </p>
                 <ul>
                   {entry.evidence.map((s, j) => (

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { OathRecord } from '../lib/records'
 import { statusExplain, verifyDigest } from '../lib/protocol/tap12'
+import { STATUS_PLAIN } from '../lib/plain'
 import { buildGraph } from '../lib/graph/graph'
 import { RelatedCommitmentsPanel, EvidenceGraphPanel } from '../components/graph-panels'
 import { parsePayload } from '../lib/tapeout/send/payload.js'
@@ -28,13 +29,13 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
   if (lookupState === 'not-found' || !record) {
     return (
       <div>
-        <h1>Record not found</h1>
+        <h1>Promise not found</h1>
         <p>
-          No record with commitment id <span className="mono">{id}</span> is in the current
-          demo set or live cache. Run a live scan on the Live chain page, or open a record from
-          the dashboard.
+          No promise with ID <span className="mono">{id}</span> is in the current
+          practice set or live list. Run a live scan from the Advanced page, or open a
+          promise from Promises.
         </p>
-        <p><a href="#/dashboard">Back to the dashboard</a></p>
+        <p><a href="#/dashboard">Back to Promises</a></p>
       </div>
     )
   }
@@ -52,8 +53,8 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
   const judgeContainer = '0x' + c.to.slice(-40)
   const revealState = deriveRevealState(record)
   const verdictLine = designated.length > 0
-    ? `Designated verdict: ${designated[0].outcome}${designated[0].valid ? '' : ` (invalid: ${designated[0].error})`}`
-    : 'No designated verdict yet'
+    ? `The judge ruled: ${designated[0].outcome}${designated[0].valid ? '' : ` (invalid: ${designated[0].error})`}`
+    : 'The judge has not ruled yet'
 
   function toggle(which: 'raw' | 'graph' | 'verify') {
     const [cur, set] = which === 'raw' ? [rawDisc, setRawDisc] : which === 'graph' ? [graphDisc, setGraphDisc] : [verifyDisc, setVerifyDisc]
@@ -67,38 +68,37 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
         <StatusBadge status={record.status} />
         <SourceBadge source={record.source} />
       </div>
-      <h1>{record.demoTitle ?? record.revealedContent?.body ?? 'Sealed commitment'}</h1>
+      <h1>{record.demoTitle ?? record.revealedContent?.body ?? 'Sealed promise'}</h1>
       <p className="small">
-        {verdictLine} · Reveal: {revealState} · Opens {formatTime(record.open)}
+        {verdictLine} · {revealState === 'verified' ? 'Opened' : revealState === 'published' ? 'Opening sent' : revealState === 'invalid' ? 'Opening did not check out' : 'Not opened yet'} · Opens {formatTime(record.open)}
       </p>
-      <p className="small">{statusExplain(record.status, record.open)}</p>
+      <p className="small">{STATUS_PLAIN[record.status]}</p>
       {record.malformedReason && (
-        <Callout kind="bad"><strong>Malformed.</strong> {record.malformedReason}</Callout>
+        <Callout kind="bad"><strong>Broken record.</strong> {record.malformedReason}</Callout>
       )}
 
-      <h2>Claim</h2>
+      <h2>Promise</h2>
       <div className="card">
         {record.revealedContent ? (
           <div>
             <p>{String(record.revealedContent.body ?? '')}</p>
             {record.revealedContent.scv?.claim && (
               <p className="small">
-                Machine-readable claim: {record.revealedContent.scv.claim.subject}{' '}
+                The promise, in detail: {record.revealedContent.scv.claim.subject}{' '}
                 {record.revealedContent.scv.claim.op} {record.revealedContent.scv.claim.value}
                 {record.revealedContent.scv.claim.metric ? ` (${record.revealedContent.scv.claim.metric})` : ''}
               </p>
             )}
             <p className="small">
-              Revealed by {record.reveal?.message.from ? shortAddress(record.reveal.message.from) : 'unknown'} at{' '}
-              {record.reveal ? formatTime(record.reveal.message.blockTimestamp) : ''}. Key:{' '}
-              <span className="mono">{record.reveal?.key.slice(0, 18)}...</span>
+              Opened by {record.reveal?.message.from ? shortAddress(record.reveal.message.from) : 'unknown'} at{' '}
+              {record.reveal ? formatTime(record.reveal.message.blockTimestamp) : ''}.
             </p>
           </div>
         ) : (
           <p>
-            Sealed. The claim text is hidden until the author or the judge publishes the content
-            key. What is public now: kind ({record.kind}), open time{' '}
-            {formatTime(record.open)}, author, judge.
+            Sealed. The promise text is hidden until it is opened. What everyone can see
+            now: the type ({record.kind}), the open date{' '}
+            {formatTime(record.open)}, the author and the judge.
           </p>
         )}
       </div>
@@ -106,35 +106,35 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
       <h2>Timeline</h2>
       <ol className="timeline">
         <li>
-          <strong>Commitment sent.</strong> Block {c.blockNumber}, {formatTime(c.blockTimestamp)}.
-          Author container <span className="mono">{shortAddress(c.from)}</span>, judge endpoint{' '}
-          <span className="mono">{c.to.slice(0, 18)}...</span>, inbox index {c.inboxIndex}.
-          {c.final ? ' Final (at or below the safe block).' : ' Not yet final.'}
+          <strong>Promise sealed.</strong> {formatTime(c.blockTimestamp)}.
+          Sealed by <span className="mono">{shortAddress(c.from)}</span>, judge{' '}
+          <span className="mono">{c.to.slice(0, 18)}...</span>.
+          {c.final ? ' Settled on the chain.' : ' Not settled yet.'}
         </li>
         {record.reveal && (
           <li>
-            <strong>Revealed.</strong> Block {record.reveal.message.blockNumber},{' '}
-            {formatTime(record.reveal.message.blockTimestamp)}. The content key was published and
-            the claim was verified against the sealed payload.
+            <strong>Opened.</strong>{' '}
+            {formatTime(record.reveal.message.blockTimestamp)}. The promise was opened and
+            checked against the sealed envelope.
           </li>
         )}
         {record.verdicts.map((v, i) => (
           <li key={i}>
-            <strong>Verdict: {v.outcome}</strong> ({v.designated ? 'designated judge' : 'third-party'}).
-            Block {v.message.blockNumber}, {formatTime(v.message.blockTimestamp)}.
-            {v.early ? ' Marked early (sent before the open time).' : ''}
+            <strong>Ruling: {v.outcome}</strong> ({v.designated ? 'the judge' : 'someone else'}).
+            {formatTime(v.message.blockTimestamp)}.
+            {v.early ? ' Ruled before the open date.' : ''}
             {!v.valid ? ` Invalid: ${v.error}` : ''} {v.body}
           </li>
         ))}
         {record.verdicts.length === 0 && !record.reveal && (
-          <li><strong>No reveal or verdict yet.</strong></li>
+          <li><strong>No opening or ruling yet.</strong></li>
         )}
       </ol>
 
-      <h2>Verdicts</h2>
-      <h3>Designated judge</h3>
+      <h2>The judge's ruling</h2>
+      <h3>The judge</h3>
       {designated.length === 0 ? (
-        <p className="small">No verdict from the designated judge yet.</p>
+        <p className="small">The judge has not ruled yet.</p>
       ) : (
         designated.map((v, i) => (
           <div className="card" key={i}>
@@ -154,9 +154,9 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
           </div>
         ))
       )}
-      <h3>Third-party verdicts</h3>
+      <h3>Other people's calls</h3>
       {thirdParty.length === 0 ? (
-        <p className="small">None. Third-party verdicts are listed separately and never merged with the designated judge verdict.</p>
+        <p className="small">None. Other people's calls are listed separately and never counted with the judge's ruling.</p>
       ) : (
         thirdParty.map((v, i) => (
           <div className="card" key={i}>
@@ -168,7 +168,7 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
 
       <h2>
         <button className="btn ghost small toggle-btn" type="button" onClick={() => toggle('graph')} aria-expanded={graphDisc === 'open'}>
-          {graphDisc === 'open' ? 'Hide graph context' : 'Show graph context'} (CONTEXT ONLY)
+          {graphDisc === 'open' ? 'Hide background' : 'Show background'}
         </button>
       </h2>
       {graphDisc === 'open' && (
@@ -180,7 +180,7 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
 
       <h2>
         <button className="btn ghost small toggle-btn" type="button" onClick={() => toggle('verify')} aria-expanded={verifyDisc === 'open'}>
-          {verifyDisc === 'open' ? 'Hide verification' : 'Show verification'}
+          {verifyDisc === 'open' ? 'Hide technical details' : 'Show technical details'}
         </button>
       </h2>
       {verifyDisc === 'open' && (
@@ -207,7 +207,7 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
             ['Status derivation', `${record.status}: ${statusExplain(record.status, record.open)}`],
             ['Open time', `${formatTime(record.open)} (unix ${record.open})`],
             ['Finality', c.final ? 'Final: block at or below the safe block' : 'Not final: pending is never a final record'],
-            ['Source', record.source === 'demo' ? 'DEMO FIXTURE: built locally, not on chain' : 'LIVE: rebuilt from X Layer hub data'],
+            ['Source', record.source === 'demo' ? 'Practice record: built locally, not on chain' : 'Live: rebuilt from X Layer data'],
           ]} />
           {c.txHash && c.txHash !== '0x' + '0'.repeat(64) && (
             <p><a href={xlayerExplorerTx(c.txHash)} target="_blank" rel="noreferrer">View transaction on the X Layer explorer</a></p>
@@ -229,7 +229,7 @@ export default function RecordDetail({ id, records }: { id: string; records: Oat
         </div>
       )}
 
-      <p><a href="#/dashboard">Back to the dashboard</a></p>
+      <p><a href="#/dashboard">Back to Promises</a></p>
     </div>
   )
 }

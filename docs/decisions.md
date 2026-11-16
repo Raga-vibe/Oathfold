@@ -206,3 +206,48 @@ graph context and verification behind disclosure toggles. Hero padding and
 section gaps tightened so "How it works" starts near the fold. Same Trigger.dev
 dark tokens, lime only as the filled accent, 4px radii, hairlines, mono 14px.
 Verified by screenshots at 1440x900 and 390x844 with zero horizontal overflow.
+
+## 24. Plain words: the app speaks promises, not protocol
+
+16 November 2026, founder decision: the founder said the build feels complicated
+and he does not understand it. The app spoke protocol (TAP-12, endpoint,
+container, keyFor, inbox, hub, commitmentId, payload, designated judge) and a
+visitor had to learn the machinery before understanding the product. From this
+round the main pages (Landing, Promises, Make a promise, Promise detail, Judge)
+use plain words only, enforced by `app/src/lib/plain.ts` (glossary as code,
+with a test that it covers every status and every send step).
+
+Glossary, applied everywhere in the main UI:
+- commitment -> promise; commitmentId -> promise ID (short form "ID")
+- reveal -> open; verdict -> ruling; "designated judge" -> "the judge";
+  "third-party verdict" -> "other people's calls"
+- endpoint (judge address) -> judge; container -> your account (author) /
+  the judge's account; hub -> the record book (and only when it must appear)
+- sealed payload -> sealed envelope; key / publishKey / keyFor -> your key
+  ("set up your key" in onboarding copy only)
+- inbox / outbox counts, digest, ref, safe block -> removed from the main UI
+  entirely; they stay on the Advanced pages and in the collapsed "Technical
+  details" section of a promise
+- demo fixture -> practice record, labelled "Practice record, not on chain"
+- GraphRAG panels -> "Related promises" and "Track record"; the label "Graph
+  context, not a judgement" becomes "Background, not a ruling"
+- malformed -> "Broken record", with one plain line explaining why
+- statuses stay as they are (sealed, due, revealed, judged, unrevealed) and
+  each gets one plain line: sealed = "Locked. Nobody can see inside yet.",
+  due = "Time to open.", unrevealed = "Past its date, still locked.",
+  revealed = "Opened. Everyone can read it.", judged = "The judge has ruled."
+
+Structure: main nav is three items only (Promises, Make a promise, Judge) plus
+Advanced. Live chain and Trust moved into Advanced (nav item "Advanced" goes
+to the live chain checks; Trust and limits links from there), routes unchanged
+(#/live, #/trust keep working). The landing record pane shows the promise in
+plain labelled lines first (Promise, Status, Opens, Judge, Ruling) with the
+sealed bytes as one short line. The 4-step strip is "Write it. Seal it. Open
+it. The judge rules." Create and Judge fields, buttons, errors, blockers and
+the seal stepper are all plain words. Technical detail (IDs, hashes, digests,
+inbox) sits behind one "Technical details" toggle on a promise, collapsed by
+default. Deliberately kept in the main UI: the words "sealed", "judge",
+"ruling", "promise ID" (they are the product's own words, not protocol), and
+the sealed content subject "Commitment: ..." inside a sealed promise (stored
+data format, not UI copy). Protocol code, machines and routes are unchanged;
+this round is copy and navigation only.

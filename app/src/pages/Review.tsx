@@ -5,6 +5,7 @@ import { buildGraph } from '../lib/graph/graph'
 import { TrackRecordPanel, RelatedCommitmentsPanel, EvidenceGraphPanel } from '../components/graph-panels'
 import { StatusBadge, SourceBadge, Callout } from '../components/ui'
 import { formatTime } from '../lib/chain/xlayer'
+import { OUTCOME_PLAIN } from '../lib/plain'
 import {
   transitionVerdictDraft,
   transitionDisclosure,
@@ -81,11 +82,11 @@ export default function Review({ records }: { records: OathRecord[] }) {
     if (!selected) return
     const errs: string[] = []
     if (!reason.trim()) errs.push('A reason is required.')
-    if (!body.trim()) errs.push('Write the verdict in words (body).')
+    if (!body.trim()) errs.push('Write your ruling in words.')
     if ((outcome === 'hit' || outcome === 'miss')) {
-      if (!sourceName.trim() || !sourceValue.trim()) errs.push('Hit/miss verdicts require at least one source with a name and a value.')
+      if (!sourceName.trim() || !sourceValue.trim()) errs.push('Hit and miss rulings need at least one piece of proof with a name and a value.')
     }
-    if (!revealed && outcome !== 'undecidable') errs.push('This commitment has not been revealed, so the verdict must be undecidable.')
+    if (!revealed && outcome !== 'undecidable') errs.push('This promise has not been opened, so the ruling must be cannot decide.')
     const allErrors = [...errs, ...check.errors]
     setErrors(allErrors)
     const r = transitionVerdictDraft(draftState, { type: 'build', valid: allErrors.length === 0, errors: allErrors })
@@ -104,30 +105,30 @@ export default function Review({ records }: { records: OathRecord[] }) {
     })
     const ref = '0x5343563103' + selected.commitmentId.slice(2, 2 + 54)
     setDraft(
-      `TAP-12 verdict draft (NOT SENT).\n` +
-      `Commitment: ${selected.commitmentId}\n` +
+      `Ruling draft (NOT SENT).\n` +
+      `Promise: ${selected.commitmentId}\n` +
       `Ref: ${ref}\n` +
-      `Outcome: ${outcome}${check.early ? ' (early: before the open time)' : ''}\n` +
+      `Ruling: ${outcome}${check.early ? ' (early: before the open date)' : ''}\n` +
       `Content JSON:\n${new TextDecoder().decode(bytes)}\n\n` +
-      `To send this live, the judge sends a public TAP-10 message to the author endpoint ` +
-      `with this ref and this content as the payload. Oathfold does not send verdicts ` +
-      `from this page yet: a verdict must come from the judge container, and this demo ` +
+      `To send this live, the judge sends it from the judge's account ` +
+      `with this ref and this content. Oathfold does not send rulings ` +
+      `from this page yet: a ruling must come from the judge's account, and this ` +
       `build has no judge wallet connected. Use the content above with the live send path ` +
-      `once a judge holder wallet is available.`,
+      `once a judge wallet is available.`,
     )
   }
 
   return (
     <div>
-      <h1>Reviewer console</h1>
+      <h1>Judge</h1>
       <p>
-        Due, revealed and unrevealed commitments waiting for a verdict. An unrevealed
-        commitment can only be undecidable. Hit and miss need at least one source.
+        Promises waiting for a ruling. A promise that has not been opened yet can
+        only be &ldquo;cannot decide&rdquo;. A hit or a miss needs at least one piece of proof.
       </p>
       {queue.length === 0 && (
         <Callout kind="info">
-          Nothing is waiting for review right now. Demo records in due, revealed and unrevealed
-          states appear here once they exist.
+          Nothing is waiting for a ruling right now. Practice records that are due,
+          opened or past their date appear here once they exist.
         </Callout>
       )}
       <div className="two-col">
@@ -141,11 +142,11 @@ export default function Review({ records }: { records: OathRecord[] }) {
               onClick={() => selectRecord(r.commitmentId)}
             >
               <StatusBadge status={r.status} />
-              <span className="queue-row__title">{r.demoTitle ?? r.revealedContent?.body ?? 'Sealed commitment'}</span>
+              <span className="queue-row__title">{r.demoTitle ?? r.revealedContent?.body ?? 'Sealed promise'}</span>
               <span className="small mono">Opens {shortDate(r.open)}</span>
-              <span className="small">{r.reveal ? 'Revealed' : 'Not revealed'}</span>
+              <span className="small">{r.reveal ? 'Opened' : 'Not opened yet'}</span>
               <button className="btn secondary small" type="button" onClick={(e) => { e.stopPropagation(); selectRecord(r.commitmentId) }}>
-                Review
+                Rule
               </button>
             </div>
           ))}
@@ -153,16 +154,15 @@ export default function Review({ records }: { records: OathRecord[] }) {
         <div>
           {selected && (
             <div className="card">
-              <h3>Verdict for {selected.demoTitle ?? 'this commitment'}</h3>
+              <h3>Ruling on {selected.demoTitle ?? 'this promise'}</h3>
               <p className="small mono">{selected.commitmentId}</p>
               {!revealed && (
                 <Callout>
-                  Not revealed yet. The only valid outcome is undecidable until the content key
-                  is published.
+                  Not opened yet. The only valid ruling is &ldquo;cannot decide&rdquo; until it is opened.
                 </Callout>
               )}
-              {check.early && <Callout>Early: the open time has not passed yet. This verdict would be marked early.</Callout>}
-              <label htmlFor="outcome">Outcome</label>
+              {check.early && <Callout>Early: the open date has not passed yet. This ruling would be marked early.</Callout>}
+              <label htmlFor="outcome">Ruling</label>
               <select
                 id="outcome"
                 value={outcome}
@@ -176,19 +176,19 @@ export default function Review({ records }: { records: OathRecord[] }) {
               >
                 {(['hit', 'miss', 'undecidable'] as const).map((o) => (
                   <option key={o} value={o} disabled={!allowedOutcomes.includes(o)}>
-                    {o}{!allowedOutcomes.includes(o) ? ' (needs a reveal)' : ''}
+                    {OUTCOME_PLAIN[o]}{!allowedOutcomes.includes(o) ? ' (needs the promise opened)' : ''}
                   </option>
                 ))}
               </select>
-              <label htmlFor="vbody">Verdict in words (body)</label>
+              <label htmlFor="vbody">Your ruling, in words</label>
               <textarea id="vbody" value={body} onChange={(e) => { onEdit(); setBody(e.target.value) }} placeholder="Hit. The release tag exists." />
               <label htmlFor="reason">Reason (required)</label>
               <input id="reason" value={reason} onChange={(e) => { onEdit(); setReason(e.target.value) }} placeholder="Checked against the public release." />
-              <label htmlFor="sname">Source name (required for hit/miss)</label>
+              <label htmlFor="sname">Proof name (required for hit/miss)</label>
               <input id="sname" value={sourceName} onChange={(e) => { onEdit(); setSourceName(e.target.value) }} placeholder="github-release" />
-              <label htmlFor="svalue">Source value (required for hit/miss)</label>
+              <label htmlFor="svalue">Proof value (required for hit/miss)</label>
               <input id="svalue" value={sourceValue} onChange={(e) => { onEdit(); setSourceValue(e.target.value) }} placeholder="v1.0.0" />
-              <label htmlFor="surl">Source URL (optional)</label>
+              <label htmlFor="surl">Proof link (optional)</label>
               <input id="surl" value={sourceUrl} onChange={(e) => { onEdit(); setSourceUrl(e.target.value) }} placeholder="https://..." />
               {errors.length > 0 && (
                 <Callout kind="bad">
@@ -197,7 +197,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
               )}
               {draft && (
                 <div>
-                  <h3>Draft (not sent)</h3>
+                  <h3>Ruling draft (not sent)</h3>
                   <pre className="mono code-pane" style={{ whiteSpace: 'pre-wrap' }}>{draft}</pre>
                 </div>
               )}
@@ -208,14 +208,14 @@ export default function Review({ records }: { records: OathRecord[] }) {
       {selected && (
         <div style={{ marginTop: 16 }}>
           <button className="btn ghost small toggle-btn" type="button" onClick={toggleGraph} aria-expanded={graphDisc === 'open'}>
-            {graphDisc === 'open' ? 'Hide graph context' : 'Show graph context'} (CONTEXT ONLY)
+            {graphDisc === 'open' ? 'Hide background' : 'Show background'}
           </button>
           {graphDisc === 'open' && (
             <div>
               <p className="small">
-                Graph context, not a judgement. This section only shows the verified record of
-                the author and the judge and the commitments that share evidence with this one.
-                It does not judge this commitment.
+                Background, not a ruling. This only shows the verified record of
+                the author and the judge and the promises that share proof with this one.
+                It does not rule on this promise.
               </p>
               <div className="grid">
                 <TrackRecordPanel graph={graph} endpoint={selected.commitment.from} role="author" />
@@ -230,7 +230,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
 
       <div className="action-bar" role="region" aria-label="Verdict actions">
         <button className="btn" type="button" onClick={buildDraft} disabled={!selected}>
-          Build verdict draft
+          Build ruling draft
         </button>
         <span className="action-bar__status">
           {draftState === 'ready'
@@ -238,7 +238,7 @@ export default function Review({ records }: { records: OathRecord[] }) {
             : draftState === 'invalid'
               ? 'Fix the errors above.'
               : selected
-                ? `Reviewing: ${selected.demoTitle ?? 'this commitment'}`
+                ? `Ruling on: ${selected.demoTitle ?? 'this promise'}`
                 : 'Nothing selected.'}
         </span>
       </div>

@@ -108,12 +108,13 @@ export const TYPE = {
 } as const
 
 // Standard footer and disclaimer lines. App.tsx renders these so the wording
-// stays identical everywhere it appears.
+// stays identical everywhere it appears. Plain words only: no protocol terms
+// in the main UI (see src/lib/plain.ts).
 export const brandCopy = {
   footerIntro:
-    'Oathfold is a TapeOut Accelerate entry for OKX X Layer. TAP-10 / TAP-12. Demo records are labelled DEMO FIXTURE. No token, no escrow, no AI verdicts.',
+    'Oathfold is a TapeOut Accelerate entry for OKX X Layer. Practice records are labelled. No token, no escrow, no AI rulings.',
   footerAttribution:
     'TapeKit send module: MIT, TapeOutProtocol/TapeKit commit f1831a4. TAP-10 Draft v1.1, TAP-12 Draft.',
-  demoDisclaimer: 'DEMO FIXTURE: not on chain',
-  liveLabel: 'LIVE: X Layer',
+  demoDisclaimer: 'Practice record, not on chain',
+  liveLabel: 'Live on X Layer',
 } as const

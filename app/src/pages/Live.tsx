@@ -179,10 +179,12 @@ export default function Live({ state }: { state: AppState }) {
 
   return (
     <div>
-      <h1>Live chain: X Layer</h1>
+      <h1>Advanced: live chain checks</h1>
       <p>
         Direct reads against the X Layer hub. No indexer is trusted: every record is verified
         against inboxAt and its digest, and only messages at or below the safe block count.
+        Also see <a href="#/trust">Trust and limits</a>, which states what this app checks
+        and what it does not claim.
       </p>
 
       <h2>Hub verification</h2>

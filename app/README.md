@@ -12,6 +12,17 @@ verdicts are recorded separately.
 **Hackathon:** OKX X Layer TapeOut Accelerate. Submit by 7 Dec 2026 23:59 UTC
 (provisional). $100k prize pool.
 
+## Explain it simply
+
+Oathfold is a sealed envelope for a promise.
+
+1. You write a promise, like "I will ship this by 1 December".
+2. You seal it and hand it to a judge before anyone knows the result. Nobody can see inside, and you cannot change it after.
+3. On the date, you open it and show the proof.
+4. The judge says hit or miss, in public, and anyone can check the envelope was sealed before the result.
+
+That is all it does. Everything else in this repo (TAP-10, TAP-12, containers, keys, the record book) is the machinery underneath. A user should never need to learn it.
+
 ## Brand
 
 - **Name:** Oathfold. **Tagline:** "Make the promise before the result".
@@ -32,7 +43,7 @@ verdicts are recorded separately.
 ```bash
 npm install
 npm run dev      # local dev server
-npm test         # vitest, 28 tests
+npm test         # vitest, 100 tests
 npm run build    # tsc + vite build, outputs static dist/
 npm run preview  # serve the built app
 ```
