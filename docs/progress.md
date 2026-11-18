@@ -150,3 +150,16 @@ Two linked jobs, one round. Full inventory in `docs/state-machines.md`.
 - Tests 100/100 pass, production build passes. Screenshots:
   `shots/auros-landing-1440.png`, `shots/auros-landing-390.png`,
   `shots/auros-dashboard-1440.png`, `shots/auros-create-1440.png`.
+
+## 18 November 2026: DeWEB publication prepared, blocked
+
+- Researched the TapeKit site-owner handbook at the pinned commit `f1831a4` and TAP-10 sections
+  6 and 7; wrote `scripts/deweb-publish.md` with the exact X Layer addresses, commands, cost model
+  and verification steps.
+- Did **not** publish. No TapeOut circuit on X Layer is held by this workspace, so there is no
+  opened container to write under and no holder wallet to sign with. No `tape://` link was faked;
+  the exact blocker and the live evidence are recorded in `scripts/deweb-publish.md`.
+- Live check 18 Nov 2026 13:20 UTC against `https://rpc.xlayer.tech`, block `76238991`: processor
+  1 / #1 resolves to container `0x374fa57399f356030847Eb0c56851bE9a1194E5D`; `isOpened` false;
+  `SiteRegistry.fileInfo(container, "index.html")` size 0 / chunkCount 0;
+  `DomainBinding.isContainerLive` false.
