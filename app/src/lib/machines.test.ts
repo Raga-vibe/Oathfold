@@ -46,9 +46,15 @@ import {
   type SendState,
   type KeyReadiness,
   type EndpointResolution,
+  transitionOnboarding,
+  onboardingIsBusy,
+  onboardingStepIndex,
+  deriveOnboardingSteps,
+  onboardingResolveBlocker,
+  onboardingKeyBlocker,
 } from './machines'
 import type { OathRecord } from './records'
-import type { HubVerification } from './chain/xlayer'
+import type { HubVerification, KeyForResult } from './chain/xlayer'
 
 function fakeRecord(over: Partial<OathRecord> = {}): OathRecord {
   return {
@@ -554,5 +560,87 @@ describe('cross-machine send prerequisites', () => {
     expect(bad.ok).toBe(false)
     expect(bad.blockers).toHaveLength(3)
     expect(sendPrerequisitesMet({ ...good, authorKey: 'mismatch' }).blockers[0]).toMatch(/differs from published/i)
+  })
+})
+
+function keyView(usable: boolean): KeyForResult {
+  return {
+    container: '0x0000000000000000000000000000000000000002',
+    endpoint: ('0x' + '00'.repeat(32)) as `0x${string}`,
+    opened: true,
+    current: '0x0000000000000000000000000000000000000003',
+    suite: 1,
+    keyIndex: 0,
+    key: ('0x' + '11'.repeat(32)) as `0x${string}`,
+    usable,
+    version: 1,
+    chains: 4n,
+  }
+}
+
+function openedResolution(over: Partial<EndpointResolution> = {}): EndpointResolution {
+  return {
+    input: '#1@2.344',
+    status: 'ok',
+    label: '#1@2.344',
+    tokenId: 1n,
+    cpu: 344n,
+    circuits: '0x0000000000000000000000000000000000000001',
+    container: '0x0000000000000000000000000000000000000002',
+    holder: '0x0000000000000000000000000000000000000003',
+    opened: true,
+    endpoint: ('0x' + '00'.repeat(32)) as `0x${string}`,
+    key: keyView(true),
+    ...over,
+  }
+}
+
+describe('17. container onboarding', () => {
+  it('walks the set-up flow and guards the off-path states', () => {
+    expect(transitionOnboarding('idle', { type: 'connect-start' })).toEqual({ ok: true, state: 'connecting' })
+    expect(transitionOnboarding('connecting', { type: 'connect-done' })).toEqual({ ok: true, state: 'idle' })
+    expect(transitionOnboarding('idle', { type: 'resolve-start' })).toEqual({ ok: true, state: 'resolving' })
+    expect(transitionOnboarding('resolving', { type: 'resolve-done' })).toEqual({ ok: true, state: 'ready' })
+    expect(transitionOnboarding('ready', { type: 'derive-start' })).toEqual({ ok: true, state: 'deriving' })
+    expect(transitionOnboarding('deriving', { type: 'derive-done' })).toEqual({ ok: true, state: 'done' })
+    expect(transitionOnboarding('ready', { type: 'publish-needed' })).toEqual({ ok: true, state: 'publishing' })
+    expect(transitionOnboarding('publishing', { type: 'publish-done' })).toEqual({ ok: true, state: 'done' })
+    expect(transitionOnboarding('idle', { type: 'block', reason: 'x' }).ok).toBe(false)
+    expect(transitionOnboarding('done', { type: 'block', reason: 'x' }).ok).toBe(false)
+    expect(transitionOnboarding('deriving', { type: 'block', reason: 'x' })).toEqual({ ok: true, state: 'blocked' })
+    expect(transitionOnboarding('done', { type: 'reset' })).toEqual({ ok: true, state: 'idle' })
+  })
+
+  it('derives busy and the step index from the state', () => {
+    expect(onboardingIsBusy('resolving')).toBe(true)
+    expect(onboardingIsBusy('publishing')).toBe(true)
+    expect(onboardingIsBusy('done')).toBe(false)
+    expect(onboardingStepIndex('blocked')).toBe(-1)
+    expect(onboardingStepIndex('ready')).toBeGreaterThan(onboardingStepIndex('resolving'))
+  })
+
+  it('separates the hard blocker from the missing-key text', () => {
+    expect(onboardingResolveBlocker(openedResolution({ status: 'not-opened', opened: false }))).toMatch(/not opened yet/i)
+    const noKey = openedResolution({ key: keyView(false) })
+    expect(onboardingResolveBlocker(noKey)).toBeNull()
+    expect(onboardingKeyBlocker(noKey)).toMatch(/no usable TapeSend key/i)
+    expect(onboardingKeyBlocker(openedResolution())).toBeNull()
+  })
+
+  it('marks every check pass, fail or pending', () => {
+    const fresh = deriveOnboardingSteps({ wallet: 'disconnected', resolution: null, keyMatches: null, published: false })
+    expect(fresh.map((s) => s.status)).toEqual(['pending', 'pending', 'pending', 'pending', 'pending', 'pending'])
+    const good = deriveOnboardingSteps({ wallet: 'ready', resolution: openedResolution(), keyMatches: true, published: true })
+    expect(good.map((s) => s.status)).toEqual(['pass', 'pass', 'pass', 'pass', 'pass', 'pass'])
+    const unopened = deriveOnboardingSteps({
+      wallet: 'ready',
+      resolution: openedResolution({ status: 'not-opened', opened: false }),
+      keyMatches: null,
+      published: false,
+    })
+    expect(unopened.find((s) => s.id === 'opened')?.status).toBe('fail')
+    const needsKey = deriveOnboardingSteps({ wallet: 'ready', resolution: openedResolution({ key: keyView(false) }), keyMatches: false, published: false })
+    expect(needsKey.find((s) => s.id === 'key')?.status).toBe('fail')
+    expect(needsKey.find((s) => s.id === 'publish')?.detail).toMatch(/needs publishing/i)
   })
 })
