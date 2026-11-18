@@ -3,3 +3,6 @@ dist/
 .env.local
 .env.*.local
 tsconfig.tsbuildinfo
+test-results/
+playwright-report/
+playwright/.cache/
