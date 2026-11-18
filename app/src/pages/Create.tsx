@@ -392,6 +392,10 @@ export default function Create({ state }: { state: AppState }) {
         A promise is a claim about your own future conduct. Write it, seal it like
         an envelope, and let your judge rule on it in public.
       </p>
+      <p className="small">
+        Need an opened container and a published TapeSend key first?{' '}
+        <a href="#/onboarding">Set up your account</a>.
+      </p>
 
       {state.hub && state.hub.isSealed === false && (
         <Callout>

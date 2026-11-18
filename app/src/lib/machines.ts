@@ -729,7 +729,7 @@ export function transitionDisclosure(
 // landing with no named rule. Now: one machine for route + menu.
 // ---------------------------------------------------------------------------
 
-export type RouteName = 'landing' | 'dashboard' | 'create' | 'record' | 'review' | 'live' | 'trust'
+export type RouteName = 'landing' | 'dashboard' | 'create' | 'record' | 'review' | 'live' | 'trust' | 'onboarding'
 
 export interface RouteMachineState {
   route: RouteName
@@ -861,4 +861,195 @@ export function verdictRulesFor(args: {
     open: args.open,
     isDesignatedJudge: true,
   })
+}
+
+// ---------------------------------------------------------------------------
+// 17. Container onboarding (Onboarding page)
+// Before: the holder's set-up path (connect the wallet, resolve the account
+// name, check opened, check keyFor usable, derive the key, publish it) had no
+// named state, so the page could not say which step it was on or why it
+// stopped, and two readers could infer different blockers. Now: one flow plus
+// a pure per-step derivation, so the UI and the tests read the same rule.
+// ---------------------------------------------------------------------------
+
+export type OnboardingState =
+  | 'idle'
+  | 'connecting'
+  | 'resolving'
+  | 'ready'
+  | 'deriving'
+  | 'publishing'
+  | 'done'
+  | 'blocked'
+
+export const ONBOARDING_FLOW: readonly OnboardingState[] = [
+  'idle',
+  'connecting',
+  'resolving',
+  'ready',
+  'deriving',
+  'publishing',
+  'done',
+] as const
+
+/** Index in the flow, or -1 for the off-path `blocked` state. */
+export function onboardingStepIndex(state: OnboardingState): number {
+  return ONBOARDING_FLOW.indexOf(state)
+}
+
+/** Busy is derived from the state, never stored separately. */
+export function onboardingIsBusy(state: OnboardingState): boolean {
+  return (
+    state === 'connecting' ||
+    state === 'resolving' ||
+    state === 'deriving' ||
+    state === 'publishing'
+  )
+}
+
+export type OnboardingEvent =
+  | { type: 'connect-start' }
+  | { type: 'connect-done' }
+  | { type: 'resolve-start' }
+  | { type: 'resolve-done' }
+  | { type: 'derive-start' }
+  | { type: 'derive-done' }
+  | { type: 'publish-needed' }
+  | { type: 'publish-done' }
+  | { type: 'block'; reason: string }
+  | { type: 'reset' }
+
+export function transitionOnboarding(
+  state: OnboardingState,
+  event: OnboardingEvent,
+): TransitionResult<OnboardingState> {
+  if (event.type === 'reset') return accept('idle')
+  if (event.type === 'block') {
+    if (state === 'done') return reject(state, 'A finished set-up cannot be blocked.')
+    if (state === 'idle' || state === 'blocked') return reject(state, 'Nothing is in flight to block.')
+    return accept('blocked')
+  }
+  switch (state) {
+    case 'idle':
+    case 'blocked':
+      if (event.type === 'connect-start') return accept('connecting')
+      if (event.type === 'resolve-start') return accept('resolving')
+      return reject(state, `Cannot ${event.type} from ${state}.`)
+    case 'connecting':
+      if (event.type === 'connect-done') return accept('idle')
+      return reject(state, `Cannot ${event.type} while the wallet is connecting.`)
+    case 'resolving':
+      if (event.type === 'resolve-done') return accept('ready')
+      return reject(state, `Cannot ${event.type} while the account is resolving.`)
+    case 'ready':
+      if (event.type === 'connect-start') return accept('connecting')
+      if (event.type === 'resolve-start') return accept('resolving')
+      if (event.type === 'derive-start') return accept('deriving')
+      if (event.type === 'publish-needed') return accept('publishing')
+      return reject(state, `Cannot ${event.type} while the account is ready.`)
+    case 'deriving':
+      if (event.type === 'derive-done') return accept('done')
+      return reject(state, `Cannot ${event.type} while the key is deriving.`)
+    case 'publishing':
+      if (event.type === 'publish-done') return accept('done')
+      return reject(state, `Cannot ${event.type} while the key is publishing.`)
+    case 'done':
+      if (event.type === 'connect-start') return accept('connecting')
+      if (event.type === 'resolve-start') return accept('resolving')
+      return reject(state, `Cannot ${event.type} after the set-up is done.`)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Per-step checks. Pure, so the page renders one list and the tests assert the
+// same rule. A missing usable key is NOT a hard blocker here: the page exists
+// to publish one. Only an unopened or unresolvable account stops the flow.
+// ---------------------------------------------------------------------------
+
+export type OnboardingStepId = 'wallet' | 'name' | 'opened' | 'key' | 'derive' | 'publish'
+export type OnboardingStepStatus = 'pending' | 'pass' | 'fail'
+
+export interface OnboardingStep {
+  id: OnboardingStepId
+  label: string
+  status: OnboardingStepStatus
+  detail?: string
+}
+
+/** The exact hard blocker for a resolution, or null when the account can proceed. */
+export function onboardingResolveBlocker(resolution: EndpointResolution | null): string | null {
+  if (!resolution) return null
+  switch (resolution.status) {
+    case 'ok':
+      return null
+    case 'not-opened':
+      return 'This account is not opened yet. Open its container on X Layer first (a one-time fee), then come back and resolve it again.'
+    case 'no-such-cpu':
+      return resolution.error ?? 'That processor does not exist on X Layer.'
+    case 'no-such-token':
+      return resolution.error ?? 'That circuit does not exist on this processor.'
+    case 'not-tapeout':
+      return resolution.error ?? 'That account is not a TapeOut circuit.'
+    case 'error':
+      return resolution.error ?? 'The account could not be read.'
+  }
+}
+
+/** The exact text for an opened account that still has no usable key. */
+export function onboardingKeyBlocker(resolution: EndpointResolution | null): string | null {
+  if (!resolution || resolution.status !== 'ok') return null
+  if (resolution.key && resolution.key.usable) return null
+  return 'This account is opened, but it has no usable TapeSend key yet. Derive and publish your key below to finish.'
+}
+
+export function deriveOnboardingSteps(args: {
+  wallet: WalletPhase
+  resolution: EndpointResolution | null
+  keyMatches: boolean | null
+  published: boolean
+}): OnboardingStep[] {
+  const { wallet, resolution, keyMatches, published } = args
+
+  let walletStep: OnboardingStep = { id: 'wallet', label: 'Connect your wallet', status: 'pending', detail: 'Not connected.' }
+  if (wallet === 'ready') walletStep = { id: 'wallet', label: 'Connect your wallet', status: 'pass', detail: 'Connected on X Layer.' }
+  else if (wallet === 'connected-wrong-chain') walletStep = { id: 'wallet', label: 'Connect your wallet', status: 'fail', detail: 'The wallet is on the wrong chain. Switch it to X Layer (196).' }
+  else if (wallet === 'error') walletStep = { id: 'wallet', label: 'Connect your wallet', status: 'fail', detail: 'The connection failed. Try again.' }
+  else if (wallet === 'connecting' || wallet === 'switching') walletStep = { id: 'wallet', label: 'Connect your wallet', status: 'pending', detail: 'Connecting…' }
+
+  let nameStep: OnboardingStep = { id: 'name', label: 'Find your account', status: 'pending', detail: 'Enter your account name, e.g. #1@2.344.' }
+  if (resolution && (resolution.status === 'ok' || resolution.status === 'not-opened')) {
+    nameStep = { id: 'name', label: 'Find your account', status: 'pass', detail: resolution.label ?? resolution.input }
+  } else if (resolution) {
+    nameStep = { id: 'name', label: 'Find your account', status: 'fail', detail: onboardingResolveBlocker(resolution) ?? 'Could not read this account.' }
+  }
+
+  let openedStep: OnboardingStep = { id: 'opened', label: 'Account opened', status: 'pending', detail: 'Not checked yet.' }
+  if (resolution && resolution.opened === true) {
+    openedStep = { id: 'opened', label: 'Account opened', status: 'pass', detail: 'Opened.' }
+  } else if (resolution && resolution.status === 'not-opened') {
+    openedStep = { id: 'opened', label: 'Account opened', status: 'fail', detail: 'Not opened yet. Opening costs a one-time fee on X Layer.' }
+  }
+
+  let keyStep: OnboardingStep = { id: 'key', label: 'TapeSend key usable', status: 'pending', detail: 'Not checked yet.' }
+  if (resolution && resolution.status === 'ok' && resolution.key && resolution.key.usable) {
+    keyStep = { id: 'key', label: 'TapeSend key usable', status: 'pass', detail: 'A usable key is on file.' }
+  } else if (resolution && resolution.status === 'ok') {
+    keyStep = { id: 'key', label: 'TapeSend key usable', status: 'fail', detail: onboardingKeyBlocker(resolution) ?? 'No usable key yet.' }
+  }
+
+  let deriveStep: OnboardingStep = { id: 'derive', label: 'Sign to derive your key', status: 'pending', detail: 'Not derived yet.' }
+  if (keyMatches === true) {
+    deriveStep = { id: 'derive', label: 'Sign to derive your key', status: 'pass', detail: 'Derived key matches the key on file.' }
+  } else if (keyMatches === false) {
+    deriveStep = { id: 'derive', label: 'Sign to derive your key', status: 'pass', detail: 'Key derived. It differs from the key on file, so it needs publishing.' }
+  }
+
+  let publishStep: OnboardingStep = { id: 'publish', label: 'Publish your key', status: 'pending', detail: 'Not published yet.' }
+  if (published) {
+    publishStep = { id: 'publish', label: 'Publish your key', status: 'pass', detail: 'Published.' }
+  } else if (keyMatches === false) {
+    publishStep = { id: 'publish', label: 'Publish your key', status: 'pending', detail: 'Needs publishing.' }
+  }
+
+  return [walletStep, nameStep, openedStep, keyStep, deriveStep, publishStep]
 }

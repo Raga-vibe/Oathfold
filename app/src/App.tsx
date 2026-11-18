@@ -23,6 +23,7 @@ import RecordDetail from './pages/RecordDetail'
 import Review from './pages/Review'
 import Live from './pages/Live'
 import Trust from './pages/Trust'
+import Onboarding from './pages/Onboarding'
 
 export type Route =
   | { name: 'landing' }
@@ -32,6 +33,7 @@ export type Route =
   | { name: 'review' }
   | { name: 'live' }
   | { name: 'trust' }
+  | { name: 'onboarding' }
 
 export function parseHash(hash: string): Route {
   const h = hash.replace(/^#/, '')
@@ -41,6 +43,7 @@ export function parseHash(hash: string): Route {
   if (h === '/review' || h === 'review') return { name: 'review' }
   if (h === '/live' || h === 'live') return { name: 'live' }
   if (h === '/trust' || h === 'trust') return { name: 'trust' }
+  if (h === '/onboarding' || h === 'onboarding') return { name: 'onboarding' }
   return { name: 'landing' }
 }
 
@@ -59,6 +62,7 @@ export function routeFromMachine(s: RouteMachineState): Route {
     case 'review': return { name: 'review' }
     case 'live': return { name: 'live' }
     case 'trust': return { name: 'trust' }
+    case 'onboarding': return { name: 'onboarding' }
     default: return { name: 'landing' }
   }
 }
@@ -120,7 +124,7 @@ export default function App() {
     const onHash = () => setRouteState((s) => {
       const h = window.location.hash.replace(/^#/, '')
       const known = h === '' || h === '/' || h.startsWith('/record/') ||
-        ['/dashboard', 'dashboard', '/create', 'create', '/review', 'review', '/live', 'live', '/trust', 'trust'].includes(h)
+        ['/dashboard', 'dashboard', '/create', 'create', '/review', 'review', '/live', 'live', '/trust', 'trust', '/onboarding', 'onboarding'].includes(h)
       const parsed = parseHash(window.location.hash)
       const r = known
         ? transitionRoute(s, { type: 'navigate', route: parsed.name, recordId: parsed.name === 'record' ? parsed.id : undefined })
@@ -266,6 +270,7 @@ export default function App() {
         {route.name === 'review' && <Review records={allRecords} />}
         {route.name === 'live' && <Live state={state} />}
         {route.name === 'trust' && <Trust />}
+        {route.name === 'onboarding' && <Onboarding state={state} />}
         <footer className="footer">
           <p>
             {brandCopy.footerIntro}{' '}

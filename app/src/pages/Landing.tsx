@@ -23,6 +23,10 @@ export default function Landing({ state }: { state: AppState }) {
             )}
             <a className="btn ghost" href="#/create">Make a promise</a>
           </p>
+          <p className="small">
+            Own a TapeOut circuit? <a href="#/onboarding">Set up your account and TapeSend key</a>{' '}
+            so you can seal a live promise.
+          </p>
         </div>
         {featured && <RecordCard record={featured} />}
       </section>

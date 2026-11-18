@@ -44,3 +44,32 @@ Hackathon judges and visitors must never have to acquire a container or publish 
 - Minting transistors on a processor (if you need more): e.g. 100 at 0.001 OKB each plus 0.00066 OKB protocol fee per transaction.
 
 Fees are as shown on the site on the day; re-check before paying.
+
+## Sources (official TapeOut only; checked 18 Nov 2026)
+
+- TapeOut official site and canvas: https://tapeout.net/ . The X Layer chain selector, Canvas
+  (tape-out), Containers (open) and the per-circuit container pages used in steps 1 and 2 are
+  all on this site. No other site is an official TapeOut source.
+- TAP-10, DeWEB Access and Messaging Layers, Draft v1.1 (2026-09-28):
+  https://github.com/TapeOutProtocol/TAPs/blob/main/TAPs/TAP-10.md . Endpoint ids and the
+  container/account model are in section 2; the hub key view (`keyFor`), the key-derivation
+  text and `publishKey` are in section 13. Oathfold uses that text unchanged.
+- TapeKit, the open-source browser kernel (MIT), pinned commit
+  `f1831a44160e7a5a31385c05f1cdf64f25619516`: https://github.com/TapeOutProtocol/TapeKit . The
+  vendored send module (`bytes.js`, `keys.js`, `payload.js`, `content.js`) comes from this
+  commit; see docs/decisions.md and docs/protocol-compatibility.md.
+- X Layer (chain 196, OKB gas): block explorer https://www.okx.com/web3/explorer/xlayer and the
+  public RPCs https://rpc.xlayer.tech and https://xlayerrpc.okx.com .
+
+Fees are shown by the site at checkout. The amounts above were seen on 16 Nov 2026 and can
+change; the open-container fee is per container and one-off.
+
+## In the app
+
+The Onboarding page (`app/src/pages/Onboarding.tsx`, linked from Landing and Make a promise)
+walks the same steps: connect the wallet, resolve the account name, check opened, check
+`keyFor` usable, derive the key from the wallet signature, and publish it. It reuses
+`resolveEndpoint` and `keyFor` from `src/lib/chain/xlayer.ts` and the existing key helpers in
+`src/lib/wallet.ts`; it writes no new crypto and does not change the live send flow. It shows
+the exact blocker when an account is not opened or has no usable key, and it never claims a
+promise was sent.
