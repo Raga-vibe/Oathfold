@@ -1,5 +1,6 @@
 import type { AppState } from '../App'
 import { Kv, RecordCard } from '../components/ui'
+import { BRAND, brandCopy } from '../brand'
 import { deriveHubState } from '../lib/machines'
 import { HUB_STATE_PLAIN } from '../lib/plain'
 
@@ -14,7 +15,8 @@ export default function Landing({ state }: { state: AppState }) {
     <div>
       <section className="hero">
         <div>
-          <h1>Seal the promise before the result.</h1>
+          <p className="eyebrow">{BRAND.tagline}</p>
+          <h1>{brandCopy.heroLine}</h1>
           <p className="hero__lead">
             Commit in public before you know the outcome. Oathfold seals a promise
             on X Layer, opens it on the date you chose, and lets your judge rule

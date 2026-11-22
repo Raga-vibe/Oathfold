@@ -26,7 +26,7 @@ test.beforeAll(async ({ browser }) => {
 
 test('landing loads', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('Seal the promise before the result.')
+  await expect(page.locator('h1')).toHaveText('Write it. Seal it. Open it. The judge rules.')
   await expect(page.locator('.steps-strip')).toBeVisible()
   await expect(page.getByRole('main').getByRole('link', { name: 'Make a promise' }).first()).toBeVisible()
 })

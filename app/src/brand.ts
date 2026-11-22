@@ -123,4 +123,29 @@ export const brandCopy = {
     'TapeKit send module: MIT, TapeOutProtocol/TapeKit commit f1831a4. TAP-10 Draft v1.1, TAP-12 Draft.',
   demoDisclaimer: 'Practice record, not on chain',
   liveLabel: 'Live on X Layer',
+  // Approved hero line (2026-11-22): the four steps, in order. The tagline
+  // above it is BRAND.tagline.
+  heroLine: 'Write it. Seal it. Open it. The judge rules.',
+} as const
+
+// Spacing scale, 4px base. Mirrors the --space-* variables in src/index.css.
+export const SPACING = {
+  1: 4,
+  2: 8,
+  3: 12,
+  4: 16,
+  5: 20,
+  6: 24,
+  8: 32,
+  12: 48,
+  16: 64,
+  20: 80,
+  30: 120,
+} as const
+
+// Shape tokens. Cards 16px, controls 6px, status chips pill.
+export const RADIUS = {
+  card: 16,
+  control: 6,
+  chip: 9999,
 } as const

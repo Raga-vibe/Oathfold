@@ -21,9 +21,9 @@ export function RecordCard({ record }: { record: OathRecord }) {
   const title = record.demoTitle ?? record.revealedContent?.body ?? 'Sealed promise'
   const designated = record.verdicts.find((v) => v.designated)
   const steps: { label: string; value: ReactNode }[] = [
-    { label: 'Sealed', value: shortDate(c.blockTimestamp) },
+    { label: 'Status', value: STATUS_DISPLAY[record.status] },
     { label: 'Opens', value: shortDate(record.open) },
-    { label: 'Opened', value: record.reveal ? shortDate(record.reveal.message.blockTimestamp) : 'Not yet' },
+    { label: 'Judge', value: shortAddress('0x' + c.to.slice(-40)) },
     {
       label: 'Ruling',
       value: designated ? (
@@ -39,13 +39,21 @@ export function RecordCard({ record }: { record: OathRecord }) {
   ]
   return (
     <article className="card record-card">
+      <h3 className="record-card__title">
+        <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>{title}</a>
+      </h3>
       <div className="record-card__head">
         <StatusBadge status={record.status} />
         <SourceBadge source={record.source} />
       </div>
-      <h3 className="record-card__title">
-        <a href={`#/record/${encodeURIComponent(record.commitmentId)}`}>{title}</a>
-      </h3>
+      <ol className="record-card__steps">
+        {steps.map((s) => (
+          <li key={s.label}>
+            <strong>{s.label}</strong>
+            <span>{s.value}</span>
+          </li>
+        ))}
+      </ol>
       <pre className="record-card__payload" title={c.payload}>
         <code>
           <span className="code-punct">{'{'}</span>{'\n'}
@@ -60,14 +68,6 @@ export function RecordCard({ record }: { record: OathRecord }) {
         </code>
       </pre>
       <p className="record-card__meta">{STATUS_PLAIN[record.status]}</p>
-      <ol className="record-card__steps">
-        {steps.map((s) => (
-          <li key={s.label}>
-            <strong>{s.label}</strong>
-            <span>{s.value}</span>
-          </li>
-        ))}
-      </ol>
       {record.revealedContent && (
         <p className="record-card__meta">{String(record.revealedContent.body ?? '').slice(0, 140)}</p>
       )}
