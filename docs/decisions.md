@@ -289,3 +289,8 @@ mistaken for spec drift:
   to the Auros particle sphere; no images, no 3D library.
 - Plain-words copy, the three-item nav, routes, protocol code, machines
   and tests are unchanged; this round is a reskin only.
+
+## 26. Deploy script uses the runner's git identity, not a teammate's
+
+- `scripts/deploy-pages.sh` hardcoded `-c user.name="bayoabefe03-ai"` and his noreply email, so every gh-pages deploy was authored as him no matter who ran it.
+- It now takes the identity from `DEPLOY_GIT_NAME` / `DEPLOY_GIT_EMAIL` when set, otherwise from the runner's own `git config user.name` / `user.email`, and fails with a clear message when neither is set. No behaviour change for the build, clone or push steps.

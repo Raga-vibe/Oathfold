@@ -34,9 +34,16 @@ fi
 find "$tmp/repo" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -r app/dist/. "$tmp/repo"/
 
+author_name="${DEPLOY_GIT_NAME:-$(git config user.name || true)}"
+author_email="${DEPLOY_GIT_EMAIL:-$(git config user.email || true)}"
+if [[ -z "$author_name" || -z "$author_email" ]]; then
+  echo "No git identity found. Set one with 'git config --global user.name \"Your Name\"' and 'git config --global user.email \"you@example.com\"', or set DEPLOY_GIT_NAME and DEPLOY_GIT_EMAIL." >&2
+  exit 1
+fi
+
 git -C "$tmp/repo" add -A
-git -C "$tmp/repo" -c user.name="bayoabefe03-ai" \
-  -c user.email="347606287+bayoabefe03-ai@users.noreply.github.com" \
+git -C "$tmp/repo" -c user.name="$author_name" \
+  -c user.email="$author_email" \
   commit --quiet -m "Deploy Oathfold static build"
 git -C "$tmp/repo" push --quiet origin gh-pages
 

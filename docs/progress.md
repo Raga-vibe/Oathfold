@@ -177,3 +177,12 @@ Two linked jobs, one round. Full inventory in `docs/state-machines.md`.
   1 / #1 resolves to container `0x374fa57399f356030847Eb0c56851bE9a1194E5D`; `isOpened` false;
   `SiteRegistry.fileInfo(container, "index.html")` size 0 / chunkCount 0;
   `DomainBinding.isContainerLive` false.
+
+## 22 November 2026: merged main verified end to end, deploy script fixed
+
+- Pulled `main` at `bf8ce7cfa3` (PR #4 merged) into the workspace copy and verified it: unit tests 104/104 pass, production build passes, Playwright e2e 7/7 pass (screenshot capture skipped by design, it needs `CAPTURE_SCREENSHOTS=1`).
+- The e2e run needed the headless shell for Playwright 1.65.1 (revision 1255). The Playwright download hosts are blocked by the VM egress proxy, so the already installed 1254 shell was copied into the 1255 slot; the suite runs on it. This is a local environment note only, nothing in the repo changed for it.
+- `vite build` exit 127 seen on the old `feat/polish-access-link` branch at `e4810f8` did not reproduce: the same commands pass on merged main. Cause remains unproven; the branch is merged and production is unaffected.
+- Fixed `scripts/deploy-pages.sh`: it hardcoded bayoabefe03-ai as the commit author. It now uses the runner's own git identity (or `DEPLOY_GIT_NAME` / `DEPLOY_GIT_EMAIL`), recorded in decisions.md section 26.
+- The GitHub Pages workflow in `.github/workflows/deploy.yml` runs `npm test` and `npm run build` on every push to main, but it does not run the Playwright suite; e2e stays a local/manual check.
+- Still open, unchanged: GitHub Pages is not enabled (repo Settings > Pages > Source: GitHub Actions), so `raga-vibe.github.io/Oathfold` returns 404; the Vercel deploy is the live one. The live on-chain cycle still needs a founder-owned opened container and key.
