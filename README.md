@@ -41,3 +41,7 @@ Access link: not deployed yet. `app/dist/` builds clean and the `gh-pages` branc
 ## License
 
 MIT. The TapeOut reference code vendored under `app/src/lib/tapeout/send/` keeps its own MIT license and attribution.
+
+Interaction details on the landing read-out (the live-dot ping) adapt the ObsidianUI
+status-bars pattern from obsidianui.dev (MIT), implemented here in plain CSS so the app
+gains no Tailwind or Motion dependency.

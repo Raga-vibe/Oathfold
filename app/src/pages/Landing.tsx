@@ -38,10 +38,10 @@ export default function Landing({ state }: { state: AppState }) {
         <div className="network-card__head">
           <h2>Read from X Layer just now</h2>
           {hubState === 'error'
-            ? <span className="badge bad">Read failed</span>
+            ? <span className="badge bad"><span className="dot" />Read failed</span>
             : hub
-              ? <span className="badge ok">Live read</span>
-              : <span className="badge">Reading…</span>}
+              ? <span className="badge ok"><span className="dot" />Live read</span>
+              : <span className="badge"><span className="dot" />Reading…</span>}
         </div>
         {hub ? (
           <Kv rows={[

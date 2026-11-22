@@ -283,6 +283,19 @@ small, .small { font-size: var(--text-sm); color: var(--silver); line-height: 1.
 .network-card__head h2 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
 .network-card__note { margin: 10px 0 0; }
 
+/* Live-dot ping: the ObsidianUI status-bars pattern (obsidianui.dev, MIT)
+   adapted to this palette. The global reduced-motion rule makes it static. */
+.network-card .badge .dot { position: relative; background: var(--mist); }
+.network-card .badge .dot::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--mist); opacity: 0.5;
+  animation: oathfold-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes oathfold-ping {
+  0% { opacity: 0.55; transform: scale(1); }
+  75%, 100% { opacity: 0; transform: scale(2.2); }
+}
+
 /* Sample bar (Create): one-click demo entry point above the form. */
 .sample-bar {
   display: flex; align-items: center; justify-content: space-between;
