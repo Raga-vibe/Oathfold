@@ -5,7 +5,7 @@
 // the main flow. Nothing in this file changes protocol behaviour; it is copy
 // only, so the protocol and machines modules are untouched.
 import type { CommitmentStatus } from './protocol/tap12'
-import type { SendState } from './machines'
+import type { SendState, HubState } from './machines'
 
 export const GLOSSARY: Record<string, string> = {
   commitment: 'promise',
@@ -72,3 +72,17 @@ export const PRACTICE_INCLUDES = 'Includes practice records'
 
 /** Graph panels are background only, never a ruling. */
 export const GRAPH_NOTE = 'Background, not a ruling.'
+
+/** Plain words for the record book state (App status strip and Landing).
+ * The named machine states in src/lib/machines.ts are unchanged; this only
+ * relabels them for readers. Kept calm on purpose: the detailed mismatch
+ * warning and its remedy live on the Advanced page, so the strip stays a
+ * one-line status instead of an alarm on every screen. */
+export const HUB_STATE_PLAIN: Record<HubState, string> = {
+  unknown: 'Checking the record book…',
+  checking: 'Checking the record book…',
+  'verified-sealed': 'Record book sealed',
+  'verified-unsealed': 'Record book open (not sealed)',
+  mismatch: 'Record book updated',
+  error: 'Record book check failed',
+}

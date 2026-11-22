@@ -54,7 +54,96 @@ function toLocalInput(ts: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export default function Create({ state }: { state: AppState }) {
+/** Join the promise fields into the sealed body, shared by the live seal and
+   * the practice-record builder so both always agree. */
+  function claimText(v: {
+    body: string
+    deliverable: string
+    acceptance: string
+    projectLink: string
+    evidence: string
+    program: string
+  }): string {
+    const parts = [v.body.trim()]
+    if (v.deliverable.trim()) parts.push(`Deliverable: ${v.deliverable.trim()}`)
+    if (v.acceptance.trim()) parts.push(`Acceptance: ${v.acceptance.trim()}`)
+    if (v.projectLink.trim()) parts.push(`Project: ${v.projectLink.trim()}`)
+    parts.push(`Evidence: ${v.evidence}`)
+    if (v.program.trim()) parts.push(`Program: ${v.program.trim()}`)
+    return parts.join('\n')
+  }
+
+  /** Plain-language distance to the open date, shown under the date field. */
+  function relativeDay(ts: number, nowSec: number): string {
+    const days = Math.round((ts - nowSec) / 86400)
+    if (days <= 0) return 'today'
+    if (days === 1) return 'tomorrow'
+    if (days < 7) return `in ${days} days`
+    if (days < 30) return `in ${Math.round(days / 7)} weeks`
+    return `in ${Math.round(days / 30)} months`
+  }
+
+  const DEMO_JUDGE_ENDPOINT = '0x0000000000000000000000c40b4a0ba288b4d2a87fc07db5f4c929f87dfda282'
+  const DEMO_AUTHOR_CONTAINER = '0xa2e4592ebbd0a08cf49dc306358b064587ab3362'
+
+  /** Build a practice record from form values. Uses the real seal() crypto but
+   * writes nothing on chain: the inbox index comes from the clock so two saves
+   * never collide, and the badge always marks it as a practice record. */
+  function demoRecordFrom(input: { title: string; claimBody: string; openTs: number }): OathRecord {
+    const now = Math.floor(Date.now() / 1000)
+    const inboxIndex = 500 + (now % 100000)
+    const judgeSecret = new Uint8Array(32).fill(0xab)
+    const authorSecret = new Uint8Array(32).fill(0xcd)
+    const judgeKey = x25519.getPublicKey(judgeSecret)
+    const authorKey = x25519.getPublicKey(authorSecret)
+    const ref = buildCommitmentRef('promise', input.openTs)
+    const content = buildCommitmentContent({
+      body: input.claimBody,
+      kind: 'promise',
+      open: input.openTs,
+      subject: `Commitment: ${input.title}`,
+    })
+    const payload = seal({
+      content,
+      recipients: [judgeKey, authorKey],
+      to: DEMO_JUDGE_ENDPOINT,
+      from: DEMO_AUTHOR_CONTAINER,
+      hub: HUB_ADDRESS,
+      ref,
+      chainId: XLAYER_CHAIN_ID,
+    })
+    const id = commitmentId(XLAYER_CHAIN_ID, HUB_ADDRESS, DEMO_JUDGE_ENDPOINT, inboxIndex)
+    return {
+      commitmentId: id,
+      kind: 'promise',
+      open: input.openTs,
+      ref,
+      commitment: {
+        chainId: XLAYER_CHAIN_ID,
+        hub: HUB_ADDRESS,
+        to: DEMO_JUDGE_ENDPOINT,
+        from: DEMO_AUTHOR_CONTAINER,
+        ref,
+        inboxIndex,
+        outboxIndex: inboxIndex,
+        payload: bytesToHex(payload),
+        txHash: '0x' + '0'.repeat(64),
+        blockNumber: 42000000 + inboxIndex,
+        blockTimestamp: now,
+        digest: digestOf(ref, payload),
+        final: true,
+      },
+      status: deriveStatus({ malformed: false, revealed: false, judged: false, open: input.openTs, now }),
+      revealedContent: null,
+      reveal: null,
+      verdicts: [],
+      source: 'demo',
+      demoTitle: input.title,
+      demoSecrets: { judge: bytesToHex(judgeSecret), author: bytesToHex(authorSecret) },
+    }
+  }
+
+  export default function Create({ state }: { state: AppState }) {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [deliverable, setDeliverable] = useState('')
@@ -105,15 +194,10 @@ export default function Create({ state }: { state: AppState }) {
   }, [openLocal])
   const nowSec = Math.floor(Date.now() / 1000)
 
-  const claimBody = useMemo(() => {
-    const parts = [body.trim()]
-    if (deliverable.trim()) parts.push(`Deliverable: ${deliverable.trim()}`)
-    if (acceptance.trim()) parts.push(`Acceptance: ${acceptance.trim()}`)
-    if (projectLink.trim()) parts.push(`Project: ${projectLink.trim()}`)
-    parts.push(`Evidence: ${evidence}`)
-    if (program.trim()) parts.push(`Program: ${program.trim()}`)
-    return parts.join('\n')
-  }, [body, deliverable, acceptance, projectLink, evidence, program])
+  const claimBody = useMemo(
+      () => claimText({ body, deliverable, acceptance, projectLink, evidence, program }),
+      [body, deliverable, acceptance, projectLink, evidence, program],
+    )
 
   const log = (text: string, ok = true) =>
     setLogs((l) => [...l, { time: new Date().toISOString().slice(11, 19), text, ok }])
@@ -332,57 +416,46 @@ export default function Create({ state }: { state: AppState }) {
     const errs = validate()
     setErrors(errs)
     if (errs.length) return
-    const now = Math.floor(Date.now() / 1000)
-    const inboxIndex = 500 + (now % 100000)
-    const judgeSecret = new Uint8Array(32).fill(0xab)
-    const authorSecret = new Uint8Array(32).fill(0xcd)
-    const judgeKey = x25519.getPublicKey(judgeSecret)
-    const authorKey = x25519.getPublicKey(authorSecret)
-    const judgeEndpoint = '0x0000000000000000000000c40b4a0ba288b4d2a87fc07db5f4c929f87dfda282'
-    const authorContainer = '0xa2e4592ebbd0a08cf49dc306358b064587ab3362'
-    const ref = buildCommitmentRef('promise', openTs)
-    const content = buildCommitmentContent({ body: claimBody, kind: 'promise', open: openTs, subject: `Commitment: ${title.trim()}` })
-    const payload = seal({
-      content,
-      recipients: [judgeKey, authorKey],
-      to: judgeEndpoint,
-      from: authorContainer,
-      hub: HUB_ADDRESS,
-      ref,
-      chainId: XLAYER_CHAIN_ID,
-    })
-    const id = commitmentId(XLAYER_CHAIN_ID, HUB_ADDRESS, judgeEndpoint, inboxIndex)
-    const record: OathRecord = {
-      commitmentId: id,
-      kind: 'promise',
-      open: openTs,
-      ref,
-      commitment: {
-        chainId: XLAYER_CHAIN_ID,
-        hub: HUB_ADDRESS,
-        to: judgeEndpoint,
-        from: authorContainer,
-        ref,
-        inboxIndex,
-        outboxIndex: inboxIndex,
-        payload: bytesToHex(payload),
-        txHash: '0x' + '0'.repeat(64),
-        blockNumber: 42000000 + inboxIndex,
-        blockTimestamp: now,
-        digest: digestOf(ref, payload),
-        final: true,
-      },
-      status: deriveStatus({ malformed: false, revealed: false, judged: false, open: openTs, now }),
-      revealedContent: null,
-      reveal: null,
-      verdicts: [],
-      source: 'demo',
-      demoTitle: title.trim(),
-      demoSecrets: { judge: bytesToHex(judgeSecret), author: bytesToHex(authorSecret) },
-    }
+    const record = demoRecordFrom({ title: title.trim(), claimBody, openTs })
     const next = saveDemoRecord(record)
     state.setDemoRecords(next)
-    setSavedDemoId(id)
+    setSavedDemoId(record.commitmentId)
+  }
+
+  /** One-click demo: fill a realistic promise and save it as a practice
+   * record, so a first visit can show the whole journey without typing. */
+  function trySample() {
+    const openTs = Math.floor(Date.now() / 1000) + 3 * 86400
+    const sample = {
+      title: 'Ship the v1 demo before Friday',
+      body: 'I will ship the Oathfold v1 demo and post the public link here before Friday.',
+      deliverable: 'A working demo at a public URL',
+      acceptance: 'The URL loads and the dashboard lists the promise.',
+      judge: '#1@2.344',
+      author: '#1@2.344',
+    }
+    setTitle(sample.title)
+    setBody(sample.body)
+    setDeliverable(sample.deliverable)
+    setAcceptance(sample.acceptance)
+    setOpenLocal(toLocalInput(openTs))
+    setJudgeInput(sample.judge)
+    setAuthorInput(sample.author)
+    const record = demoRecordFrom({
+      title: sample.title,
+      claimBody: claimText({
+        body: sample.body,
+        deliverable: sample.deliverable,
+        acceptance: sample.acceptance,
+        projectLink: '',
+        evidence,
+        program,
+      }),
+      openTs,
+    })
+    const next = saveDemoRecord(record)
+    state.setDemoRecords(next)
+    setSavedDemoId(record.commitmentId)
   }
 
   return (
@@ -395,6 +468,13 @@ export default function Create({ state }: { state: AppState }) {
       <p className="small">
         Need an opened container and a published TapeSend key first?{' '}
         <a href="#/onboarding">Set up your account</a>.
+      </p>
+
+      <p className="sample-bar">
+        <span>Just looking? Fill a realistic promise and save it in one click.</span>
+        <button className="btn secondary small" type="button" onClick={trySample}>
+          Try a sample promise
+        </button>
       </p>
 
       {state.hub && state.hub.isSealed === false && (
@@ -441,7 +521,9 @@ export default function Create({ state }: { state: AppState }) {
         <label htmlFor="open">Open date (your local time, {Intl.DateTimeFormat().resolvedOptions().timeZone})</label>
         <input id="open" type="datetime-local" value={openLocal} onChange={(e) => setOpenLocal(e.target.value)} />
         {openTs > 0 && (
-          <p className="small">Open date in UTC: {new Date(openTs * 1000).toUTCString()}</p>
+          <p className="small muted">
+            Opens {relativeDay(openTs, nowSec)} · UTC {new Date(openTs * 1000).toUTCString()}
+          </p>
         )}
         <label htmlFor="author">Your account</label>
         <input id="author" className="mono" value={authorInput} onChange={(e) => setAuthorInput(e.target.value)} placeholder="#1@2.344" />

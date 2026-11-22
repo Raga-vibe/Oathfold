@@ -1,7 +1,7 @@
 // Demo-lifecycle end-to-end tests (Commit 3).
 //
 // Covers exactly the practice-record journey, with no live send and no wallet:
-//   1. landing loads
+//   1. landing loads, with the live X Layer read
 //   2. dashboard shows all six statuses
 //   3. create a practice record
 //   4. open that record (sealed state)
@@ -9,6 +9,7 @@
 //      the UI (the app has no separate reveal button; a real reveal is the
 //      holder-key path and lands as an Opened record)
 //   6. build a verdict draft in the reviewer console
+//   7. one click fills and saves a sample practice record
 //
 // Every promise here is a DEMO FIXTURE built in the browser. Nothing on this
 // page talks to a wallet or sends a transaction.
@@ -28,6 +29,13 @@ test('landing loads', async ({ page }) => {
   await expect(page.locator('h1')).toHaveText('Seal the promise before the result.')
   await expect(page.locator('.steps-strip')).toBeVisible()
   await expect(page.getByRole('main').getByRole('link', { name: 'Make a promise' }).first()).toBeVisible()
+})
+
+test('landing shows the live X Layer read', async ({ page }) => {
+  await page.goto('/')
+  const card = page.locator('.network-card')
+  await expect(card.getByRole('heading', { name: 'Read from X Layer just now' })).toBeVisible()
+  await expect(card.locator('.badge')).toBeVisible()
 })
 
 test('dashboard shows all six statuses', async ({ page }) => {
@@ -66,6 +74,16 @@ test('an opened practice record shows its promise text (the reveal state)', asyn
   await expect(page.locator('h1')).toHaveText('Finish the judge page')
   await expect(page.getByText('I will finish the judge page before the open date.')).toBeVisible()
   await expect(page.getByText('Opened. Everyone can read it.')).toBeVisible()
+})
+
+test('one click fills and saves a sample practice record', async ({ page }) => {
+  await page.goto('/#/create')
+  await expect(page.locator('.sample-bar')).toBeVisible()
+  await page.getByRole('button', { name: 'Try a sample promise' }).click()
+
+  await expect(page.locator('#title')).toHaveValue('Ship the v1 demo before Friday')
+  await expect(page.locator('#judge')).toHaveValue('#1@2.344')
+  await expect(page.getByText('Saved as a practice record.')).toBeVisible()
 })
 
 test('build a verdict draft in the reviewer console', async ({ page }) => {

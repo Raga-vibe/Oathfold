@@ -31,25 +31,34 @@ That is all it does. Everything else in this repo (TAP-10, TAP-12, containers, k
   source or its limit. Never use the hype words "trustless truth",
   "unbreakable", "guaranteed" or "fraud-proof".
 - **Tokens (single source of truth: `src/brand.ts`, mirrored in
-  `src/index.css`):** ink `#0F172A`, body `#334155`, muted `#475569`, line
-  `#E2E8F0`, background `#F8FAFC`, surface `#FFFFFF`, one accent blue
-  `#1E40AF` (strong `#1E3A8A`, tint `#EFF6FF`). Status colours are always paired
-  with a text label and a dot shape, never used by colour alone.
-- **Type:** system stack only, base 16px, line-height 1.5, tight headings.
-  Light theme only, no dark mode.
+  `src/index.css`):** Auros dark teal — abyss `#012624`, deep `#011d1c`, kelp
+  `#003734`, mist `#edfffe`, platinum `#ffffff`, silver `#bbc7c6`, lavender
+  phosphor `#fde9ff` reserved for the ruling value, and the aurora gradient
+  reserved for the primary CTA. Status is always a text label plus a dot shape,
+  never colour alone.
+- **Type:** system stack only (no webfonts), base 16px, line-height 1.4,
+  weights 400/500, uppercase tracked labels. Dark theme only.
 
 ## Run it
 
 ```bash
 npm install
 npm run dev      # local dev server
-npm test         # vitest, 100 tests
+npm test         # vitest, 104 tests
+npm run test:e2e # Playwright, 7 demo-lifecycle tests
 npm run build    # tsc + vite build, outputs static dist/
 npm run preview  # serve the built app
 ```
 
 No secrets. No backend. All chain reads use the public X Layer RPCs
 (`https://rpc.xlayer.tech`, `https://xlayerrpc.okx.com`). See `.env.example`.
+
+## Deploy
+
+`bash ../scripts/deploy-pages.sh` rebuilds `dist/` and force-updates the `gh-pages`
+branch. `.github/workflows/deploy.yml` publishes automatically on every push to `main`
+once repo Settings > Pages uses "GitHub Actions" as the source. Either way the site
+lands at `https://raga-vibe.github.io/Oathfold/`.
 
 ## Pages (hash routing, no router library)
 
@@ -66,6 +75,8 @@ No secrets. No backend. All chain reads use the public X Layer RPCs
   TAP-12 guards (hit/miss need a source, unrevealed only allows undecidable, early flag).
 - `#/live` Live chain: hub verification panel (ERC-1967 implementation slot, isSealed,
   owner), endpoint and keyFor lookup, and a Sent-log scan in 100-block chunks.
+- `#/onboarding` Onboarding: step-by-step container and TapeSend-key readiness check
+  for a holder, reusing the same `resolveEndpoint` / `keyFor` code as the live send.
 - `#/trust` Trust: what is verified vs what is not, privacy, keys, no legal or escrow claims.
 
 ## Protocol
@@ -81,12 +92,14 @@ No secrets. No backend. All chain reads use the public X Layer RPCs
 - MVP scope: **promise** commitments only. Forecasts are defined in TAP-12 but rejected
   in the Create form.
 
-## Verified live facts (2026-11-16)
+## Verified live facts (checked 2026-11-16 and 2026-11-18)
 
 - X Layer chain 196, hub proxy `0xe61A9C7213a6Aa616C246a2B569e555B417b25ee`.
-- Hub implementation slot reads `0xdCC57797089eBD9f26e686379A4323f353a3F9C6` (matches the
-  pinned X Layer implementation). `isSealed()` is **false**, owner is
-  `0x571d447f4f24688eC35Ccf07f1D6993655F6aF15`. The app warns about this on every page.
+- Hub implementation slot read `0xdCC57797089eBD9f26e686379A4323f353a3F9C6` on 2026-11-16,
+  then `0xf6b86f44bd039bacc8d3670971d556202d579261` at block 76246532 on 2026-11-18. The pin
+  therefore no longer matches; the app says "Record book updated" instead of claiming
+  verification, and Advanced shows the change. `isSealed()` is **false** and the owner is
+  unchanged (`0x571d447f4f24688eC35Ccf07f1D6993655F6aF15`), so the unsealed warning stays.
 - Finality tag for X Layer is `safe`. Only messages at or below the safe block count.
 - `eth_getLogs` max range is 100 blocks; the indexer chunks at 100.
 - Factory `0x1f09DAeFA827f02CBb40967cc91b259763760761`, cpuCount 424. Processor 1 tokens
@@ -116,5 +129,8 @@ demo reveals work.
 - `../docs/architecture.md`: modules, data flow, live send flow.
 - `../docs/security-and-trust.md`: threat model, privacy, key handling, unsealed contracts.
 - `../docs/decisions.md`: decisions made while building, with reasons.
-- `../docs/demo-script.md`: a 5-minute demo walkthrough.
+- `../docs/demo-script.md`: the final 3-minute video shot list, with each shot marked
+  fixture or live.
+- `../docs/assets/screenshots/`: desktop and mobile captures of Landing, Dashboard,
+  Create, Record detail and Live chain.
 - `../docs/submission-draft.md`: draft submission text for the hackathon form.

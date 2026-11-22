@@ -24,6 +24,7 @@ import Review from './pages/Review'
 import Live from './pages/Live'
 import Trust from './pages/Trust'
 import Onboarding from './pages/Onboarding'
+import { HUB_STATE_PLAIN } from './lib/plain'
 
 export type Route =
   | { name: 'landing' }
@@ -86,18 +87,6 @@ const NAV: { href: string; label: string; route: Route['name'] }[] = [
   { href: '#/review', label: 'Judge', route: 'review' },
   { href: '#/live', label: 'Advanced', route: 'live' },
 ]
-
-/** Plain words for the hub state in the status strip. The machine state in
- * src/lib/machines.ts is unchanged; this only relabels it. The record book
- * is the hub; the strip never says "hub". */
-const HUB_PLAIN: Record<string, string> = {
-  unknown: 'Checking the record book…',
-  checking: 'Checking the record book…',
-  'verified-sealed': 'Record book sealed',
-  'verified-unsealed': 'Record book not sealed',
-  mismatch: 'Record book does not match',
-  error: 'Record book check failed',
-}
 
 export default function App() {
   // Route + mobile menu are one machine (src/lib/machines.ts): navigation
@@ -206,6 +195,13 @@ export default function App() {
     return r.ok ? r.state : s
   })
   const walletBusy = walletPhase === 'connecting' || walletPhase === 'switching'
+  // One calm line for the record book, plus the block it was read at when the
+  // check succeeded. A mismatch is not shouted here; Advanced explains it.
+  const hubLine = HUB_STATE_PLAIN[hubState] ?? hubStateLabel(hubState)
+  const hubBlock = (hubState === 'verified-sealed' || hubState === 'verified-unsealed') &&
+    hub?.blockNumber != null && hub.blockNumber > 0
+    ? ` · block ${hub.blockNumber}`
+    : ''
 
   return (
     <div>
@@ -253,8 +249,9 @@ export default function App() {
       </header>
 
       <div className="status-strip">
-        <div className="status-strip__inner">
-          <b>X Layer 196</b> · {HUB_PLAIN[hubState] ?? hubStateLabel(hubState)} ·{' '}
+        <div className="status-strip__inner" aria-live="polite">
+          <b>X Layer 196</b> · {hubLine}
+          {hubBlock} ·{' '}
           {walletPhase === 'ready' && wallet.address
             ? `Wallet ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
             : walletPhaseLabel(walletPhase)}{' '}

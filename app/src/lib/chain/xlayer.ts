@@ -110,10 +110,12 @@ export interface HubVerification {
 
 /**
  * Verify the live hub: read the ERC-1967 implementation slot, isSealed() and
- * owner(), plus latest and safe blocks. Verified live 2026-11-16: implementation
- * 0xdCC57797089eBD9f26e686379A4323f353a3F9C6, isSealed() false,
- * owner 0x571d447f4f24688eC35Ccf07f1D6993655F6aF15.
- * The hub is NOT sealed, so the UI must keep showing that warning.
+ * owner(), plus latest and safe blocks. The slot moved after the pin was set:
+ * 2026-11-16 read 0xdCC57797089eBD9f26e686379A4323f353a3F9C6 (the value this
+ * file pins), 2026-11-18 read 0xf6b86f44bd039bacc8d3670971d556202d579261 at block
+ * 76246532. implementationMatches is therefore false until the pin is
+ * re-verified, and the app reports that instead of hiding it. isSealed() stayed
+ * false and the owner is unchanged, so the unsealed warning stays too.
  */
 export async function verifyHub(): Promise<HubVerification> {
   try {

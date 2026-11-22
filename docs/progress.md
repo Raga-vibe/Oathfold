@@ -1,8 +1,22 @@
 # Oathfold progress
 
 Hackathon: OKX X Layer TapeOut Accelerate. Submit by 7 Dec 2026 23:59 UTC (provisional).
-Prize pool $100k (1st $20,000; 5 x 2nd $10,000; 5 x 3rd $6,000). Status: MVP built, tested, and building clean. Not deployed. No live
+Prize pool $100k (1st $20,000; 5 x 2nd $10,000; 5 x 3rd $6,000). Status: MVP built and building clean; 104 unit tests and 7 Playwright e2e tests pass. Static `gh-pages` branch pushed; turning on Pages needs one repo setting. No live
 send has happened.
+
+## 2026-11-18: polish round (access link, hub message, UI)
+
+- PR #3 merged: Playwright e2e (now 7 tests), 10 desktop/mobile screenshots, final demo
+  shot list.
+- Live re-check at block 76246532: the hub implementation slot now reads
+  `0xf6b86f44bd039bacc8d3670971d556202d579261`, not the pinned
+  `0xdCC57797089eBD9f26e686379A4323f353a3F9C6`. `isSealed()` false, owner unchanged.
+  The status strip now says "Record book updated" instead of an alarm; the landing page
+  shows exactly what was read from the chain, and Advanced keeps the full warning.
+- Landing gains a live read-out card (network, record book, implementation, seal state,
+  block). Create gains a one-click sample promise and a plain-language open-date hint.
+- Added `.github/workflows/deploy.yml` and `scripts/deploy-pages.sh`; pushed `gh-pages`.
+  Enabling Pages needs repo admin: bayoabefe03-ai gets HTTP 404 from the Pages API.
 
 ## 2026-11-16: MVP built
 
