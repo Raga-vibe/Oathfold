@@ -60,6 +60,10 @@ branch. `.github/workflows/deploy.yml` publishes automatically on every push to 
 once repo Settings > Pages uses "GitHub Actions" as the source. Either way the site
 lands at `https://raga-vibe.github.io/Oathfold/`.
 
+When deploying from the static `gh-pages` branch on Vercel instead, set Root Directory to
+`/` and leave the build command empty; `app/public/vercel.json` ships in `dist/` and tells
+Vercel there is nothing to build.
+
 ## Pages (hash routing, no router library)
 
 - `#/` Landing: what, why, how, privacy warning.
