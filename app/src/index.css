@@ -73,10 +73,16 @@
 
   --wrap: 1440px;
   --gut: 32px;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
 body {
   font-family: var(--matter);
   color: var(--silver);
@@ -84,7 +90,9 @@ body {
   line-height: var(--leading-body);
   font-size: var(--text-base);
   font-weight: 400;
+  text-wrap: pretty;
 }
+h1, h2, h3, .brand { text-wrap: balance; }
 img, svg { max-width: 100%; }
 a { color: var(--mist); text-decoration: none; }
 a:hover { color: var(--platinum); text-decoration: underline; text-underline-offset: 3px; }
@@ -266,14 +274,39 @@ small, .small { font-size: var(--text-sm); color: var(--silver); line-height: 1.
 }
 .arrow-btn:hover { text-decoration: none; color: var(--platinum); background: rgba(3, 81, 75, 0.8); }
 
-/* Checked live: one mono line, real values, link to Advanced. */
-.checked-line {
-  border-top: 1px solid var(--line-soft); margin-top: 68px; padding-top: 20px;
-  font-family: var(--mono); font-size: 14px; line-height: 1.43; color: var(--silver);
+/* Live read-out (landing): the proof that this page read X Layer just now. */
+.network-card { margin-top: 24px; }
+.network-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
 }
-.checked-line b { color: var(--mist); font-weight: 500; }
-.checked-line a { color: var(--silver); text-decoration: underline; text-underline-offset: 2px; }
-.checked-line a:hover { color: var(--platinum); }
+.network-card__head h2 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
+.network-card__note { margin: 10px 0 0; }
+
+/* Live-dot ping: the ObsidianUI status-bars pattern (obsidianui.dev, MIT)
+   adapted to this palette. The global reduced-motion rule makes it static. */
+.network-card .badge .dot { position: relative; background: var(--mist); }
+.network-card .badge .dot::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--mist); opacity: 0.5;
+  animation: oathfold-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes oathfold-ping {
+  0% { opacity: 0.55; transform: scale(1); }
+  75%, 100% { opacity: 0; transform: scale(2.2); }
+}
+
+/* Sample bar (Create): one-click demo entry point above the form. */
+.sample-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  background: var(--kelp); border-radius: var(--radius);
+  padding: 12px 16px; margin: 16px 0 0;
+}
+.sample-bar span { color: var(--silver); font-size: var(--text-sm); }
+@media (max-width: 720px) {
+  .sample-bar { flex-direction: column; align-items: flex-start; }
+}
 
 label { display: block; font-weight: 500; font-size: 0.875rem; margin: 12px 0 6px; color: var(--mist); }
 input, textarea, select {
@@ -451,7 +484,7 @@ details summary { cursor: pointer; font-weight: 500; color: var(--platinum); }
     border-top: 1px solid var(--line); padding-top: 4px; gap: 0;
   }
   .nav.open { display: flex; }
-  .nav a { padding: 12px 2px; border-bottom: 1px solid var(--line-soft); }
+  .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 12px 8px; border-bottom: 1px solid var(--line-soft); }
   .walletbar { flex: none; gap: 6px; order: 2; margin-left: auto; }
   .walletbar > span { display: none; }
   .walletbar .btn.small { padding: 8px 12px; }
@@ -460,7 +493,6 @@ details summary { cursor: pointer; font-weight: 500; color: var(--platinum); }
   .record-card__steps { grid-template-columns: repeat(2, 1fr); row-gap: 8px; }
   .record-card__steps li:nth-child(3) { border-left: none; padding-left: 0; }
   .hero__actions .btn { width: 100%; }
-  .checked-line { margin-top: 68px; }
   .record-table { display: block; overflow-x: auto; }
   .action-bar__status { flex-basis: 100%; }
   .status-strip__inner { white-space: normal; }

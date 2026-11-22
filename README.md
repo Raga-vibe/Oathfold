@@ -21,8 +21,27 @@ Entry for the OKX X Layer TapeOut Accelerate hackathon. Submission deadline: 7 D
 
 ## Status
 
-MVP built 16 November 2026. Unit tests 28/28 pass, production build passes. Demo records in the app are labelled fixtures built with real seal/open crypto. No live on-chain commitment has been sent yet: that needs a founder-owned opened TapeOut container with a published TapeSend key on X Layer. See `docs/progress.md` and `docs/protocol-compatibility.md` for the exact verified state and the remaining blocker.
+MVP built 16 November 2026. 104 unit tests pass, the production build passes, and 7 Playwright end-to-end tests cover the demo lifecycle. Demo records in the app are labelled practice records built with real seal/open crypto. No live on-chain commitment has been sent yet: that needs a founder-owned opened TapeOut container with a published TapeSend key on X Layer. See `docs/progress.md` and `docs/protocol-compatibility.md` for the exact verified state and the remaining blocker.
+
+Access link: not deployed yet. `app/dist/` builds clean and the `gh-pages` branch is already pushed; turning on Pages is one repo setting (`scripts/deploy-pages.sh`). UI shots are in `docs/assets/screenshots/`.
+
+## Where the TapeOut pieces live
+
+| What you see | Where it is |
+| --- | --- |
+| Seal/open crypto (official TapeKit module, MIT) | `app/src/lib/tapeout/send/{keys,payload,content,bytes}.ts` |
+| TAP-12 refs, commitment id, reveal, verdict rules | `app/src/lib/protocol/tap12.ts` |
+| Live reads: hub verification, endpoint resolve, `keyFor` | `app/src/lib/chain/xlayer.ts` |
+| Wallet connect, key derivation, `publishKey`, send | `app/src/lib/wallet.ts` |
+| Sent-log scan in 100-block chunks, digest checks | `app/src/lib/indexer.ts` |
+| Practice records and the localStorage cache | `app/src/lib/fixtures.ts`, `app/src/lib/store.ts` |
+| One-click sample promise, form, privacy preview | `app/src/pages/Create.tsx` |
+| Demo lifecycle e2e | `app/tests/e2e/demo-lifecycle.spec.ts` |
 
 ## License
 
 MIT. The TapeOut reference code vendored under `app/src/lib/tapeout/send/` keeps its own MIT license and attribution.
+
+Interaction details on the landing read-out (the live-dot ping) adapt the ObsidianUI
+status-bars pattern from obsidianui.dev (MIT), implemented here in plain CSS so the app
+gains no Tailwind or Motion dependency.

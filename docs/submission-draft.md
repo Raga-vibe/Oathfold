@@ -15,7 +15,9 @@ chain.
 
 ## Access link
 
-TODO: deploy the static `dist/` output and paste the URL here.
+Not deployed yet. `app/dist/` builds clean and the `gh-pages` branch is pushed;
+enabling Pages is one repo setting away (Settings > Pages). Expected URL once enabled:
+https://raga-vibe.github.io/Oathfold/
 
 ## Demo video
 
@@ -31,8 +33,10 @@ TODO: record a video of at most 3 minutes following `docs/demo-script.md`.
 - **DeWEB hub on X Layer:** the hub proxy `0xe61A9C7213a6Aa616C246a2B569e555B417b25ee`
   carries every message. The app uses `send`, `publishKey`, `keyFor`, `inboxCount`,
   `inboxAt`, `inboxPage`, `outboxCount`, `outboxPage`, and the `Sent` event. The app
-  verifies the hub live: ERC-1967 implementation slot reads
-  `0xdCC57797089eBD9f26e686379A4323f353a3F9C6`, the pinned X Layer implementation.
+  verifies the hub live by reading the ERC-1967 implementation slot, `isSealed()` and
+  `owner()`. The slot moved between checks (2026-11-16 `0xdCC57797…F9C6`; 2026-11-18 at
+  block 76246532 `0xf6b86f44bd039bacc8d3670971d556202d579261`) and the app reports that
+  mismatch rather than claiming verification.
 - **TAP-10 (TapeSend):** sealed and public payloads, X25519 key derivation by wallet
   signature (`personal_sign` over the exact key-derivation text), and the digest
   `keccak256(ref || keccak256(payload))`. Crypto is the official TapeKit send module,
@@ -67,9 +71,11 @@ TODO: record a video of at most 3 minutes following `docs/demo-script.md`.
   live send path is fully built and wallet-gated; it stops with the exact prerequisite
   instead of faking a send. Demo records in the app are built locally with real seal()
   calls and are labelled DEMO FIXTURE.
-- Goal before submission: open a founder container, publish a key, send one live
-  commitment, reveal it, and record a designated judge verdict, so the submission links
-  to at least one real on-chain record cycle.
+- Goal if it can be done at no cost: open a founder container, publish a key, send one
+  live commitment, reveal it, and record a designated judge verdict. There is no budget
+  for a circuit purchase or opening fee, so if that cannot happen free the submission
+  leads with the working app, the live chain reads and the clearly labelled practice
+  lifecycle instead, and says so plainly.
 
 ## Founder next step (exact)
 
@@ -87,5 +93,6 @@ TODO: record a video of at most 3 minutes following `docs/demo-script.md`.
 
 ## Repo
 
-TODO: paste the GitHub repo URL after the parent agent creates it. The app is a static
-SPA (`app/`, `npm install && npm run build`, serve `dist/`). Tests: `npm test` (28 tests).
+https://github.com/Raga-vibe/Oathfold. The app is a static SPA (`app/`,
+`npm install && npm run build`, serve `dist/`). Tests: `npm test` (104 unit tests) and
+`npm run test:e2e` (7 Playwright lifecycle tests).

@@ -34,7 +34,7 @@ Checked 16 November 2026, 12:00-12:30 WAT. All live chain checks were read-only.
 ## Hub (verified live, read-only)
 
 - Hub proxy (every chain): `0xe61A9C7213a6Aa616C246a2B569e555B417b25ee`. Code present (proxy bytecode returned by `eth_getCode`).
-- ERC-1967 implementation slot `0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc` reads `0xdCC57797089eBD9f26e686379A4323f353a3F9C6`, exactly the X Layer implementation listed as Current in TAP-10 Deployments since 2026-09-19. Match.
+- ERC-1967 implementation slot `0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc` read `0xdCC57797089eBD9f26e686379A4323f353a3F9C6` on 2026-11-16 (the pinned X Layer implementation listed in TAP-10 Deployments) and then `0xf6b86f44bd039bacc8d3670971d556202d579261` at block 76246532 on 2026-11-18. The pin no longer matches, so `implementationMatches` is false and the app reports the change ("Record book updated") instead of claiming verification. The advanced page still warns in full.
 - `isSealed()`: `0` (false). `owner()`: `0x571d447f4f24688eC35Ccf07f1D6993655F6aF15`. The hub is NOT sealed and is still upgradeable by its owner. The app must show this warning; do not present the hub as final.
 - Boot implementation: `0xC0D28CA8689248B0bed26cC0aa328CF16Aa4401e` (per TAP-10).
 
